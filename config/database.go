@@ -1,11 +1,11 @@
-package db
+package config
 
 import (
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/joho/godotenv" // Load .env file
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -34,4 +34,4 @@ func ConnectDB() {
 	}
 
 	fmt.Println("✅ Connected to Supabase PostgreSQL")
-}
+} 

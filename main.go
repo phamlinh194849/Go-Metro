@@ -1,34 +1,33 @@
 package main
 
 import (
-	"go-metro/db"
+	"go-metro/config"
 	"go-metro/models"
-	"net/http"
+	"go-metro/routes"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	db.ConnectDB()
-	models.MigrateHistory()
+	// Initialize database
+	config.ConnectDB()
 
+	// Kiểm tra biến MIGRATE trong env
+	migrate := strings.ToLower(os.Getenv("MIGRATE")) == "true"
+	if migrate {
+		models.MigrateHistory()
+		models.MigrateCard()
+		models.MigrateUser()
+	}
+
+	// Setup Gin router
 	r := gin.Default()
 
-	r.POST("/history", func(c *gin.Context) {
-		var h models.History
+	// Setup routes
+	routes.SetupRoutes(r)
 
-		if err := c.ShouldBindJSON(&h); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := db.DB.Create(&h).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save history"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "history saved", "data": h})
-	})
-
+	// Start server
 	r.Run(":8080")
 }

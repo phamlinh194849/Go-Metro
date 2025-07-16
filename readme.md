@@ -1,3 +1,5 @@
+# Go-Metro
+
 TH1: Thành công
 - checkin thành công/ thất bại
 + mã thẻ
@@ -9,6 +11,20 @@ TH1: Thành công
 
  
 CardID, Time, Status, UserID, Blance, Action,
+
+
+@Nguyen231002Hnam
+
+## Tuỳ chọn migrate khi khởi động
+
+Thêm biến sau vào file `.env` trong thư mục Go-Metro:
+
+```
+MIGRATE=true
+```
+
+- Nếu `MIGRATE=true` thì sẽ tự động migrate database khi khởi động.
+- Nếu `MIGRATE=false` thì sẽ bỏ qua bước migrate.
 
 
 @Nguyen231002Hnam

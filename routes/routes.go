@@ -58,6 +58,13 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// Health check route
+	// @Summary Health check
+	// @Description Check if the API is running
+	// @Tags system
+	// @Accept json
+	// @Produce json
+	// @Success 200 {object} object{status=string} "API is healthy"
+	// @Router /health [get]
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})

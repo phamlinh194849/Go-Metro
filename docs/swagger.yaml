@@ -1,0 +1,619 @@
+basePath: /
+definitions:
+  consts.CardAction:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - CardActionTopup
+    - CardActionPay
+    - CardActionRefund
+  consts.CardType:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - StudentCard
+    - NormalCard
+    - VipCard
+  consts.Role:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - AdminRole
+    - UserRole
+    - StaffRole
+  consts.Status:
+    enum:
+    - active
+    - inactive
+    - blocked
+    type: string
+    x-enum-varnames:
+    - ActiveStatus
+    - InactiveStatus
+    - BlockedStatus
+  consts.UserAction:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - UserActionCheckin
+    - UserActionCheckout
+  handlers.CardReq:
+    properties:
+      owner_id:
+        type: string
+      type:
+        type: string
+    required:
+    - type
+    type: object
+  models.Card:
+    properties:
+      balance:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      owner_id:
+        type: string
+      price:
+        type: number
+      rf_id:
+        type: string
+      status:
+        $ref: '#/definitions/consts.Status'
+      type:
+        $ref: '#/definitions/consts.CardType'
+      updated_at:
+        type: string
+    type: object
+  models.History:
+    properties:
+      balance:
+        type: number
+      card_action:
+        $ref: '#/definitions/consts.CardAction'
+      card_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      time:
+        type: string
+      updated_at:
+        type: string
+      user_action:
+        $ref: '#/definitions/consts.UserAction'
+      user_id:
+        type: string
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: integer
+      role:
+        allOf:
+        - $ref: '#/definitions/consts.Role'
+        description: '"ADMIN", "USER", "STAFF"'
+      status:
+        description: '"active" hoặc "inactive"'
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  utils.Response:
+    properties:
+      data: {}
+      error:
+        type: string
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A Metro Card Management System API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Go Metro API
+  version: "1.0"
+paths:
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all users in the system (Admin access required)
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all users (Admin only)
+      tags:
+      - admin
+  /admin/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific user from the system (Admin access required)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden - Admin access required
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Thông tin không tồn tại
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete user (Admin only)
+      tags:
+      - admin
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific user by their ID (Admin access required)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get user by ID (Admin only)
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Update a specific user's information (Admin access required)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User update data
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update user (Admin only)
+      tags:
+      - admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with username and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with username, password, email, and
+        full name
+      produces:
+      - application/json
+      responses: {}
+      summary: Register a new user
+      tags:
+      - auth
+  /card:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all metro cards in the system
+      produces:
+      - application/json
+      responses: {}
+      summary: Get all cards
+      tags:
+      - card
+    post:
+      consumes:
+      - application/json
+      description: Create a new metro card with auto-generated card ID and user ID
+      parameters:
+      - description: Card information
+        in: body
+        name: card
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CardReq'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new card
+      tags:
+      - card
+  /card/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific card from the system
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete card
+      tags:
+      - card
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific card by its database ID
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Card retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Card'
+              type: object
+        "404":
+          description: Thẻ không tồn tại
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get card by ID
+      tags:
+      - card
+    put:
+      consumes:
+      - application/json
+      description: Update a specific card's information
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated card information
+        in: body
+        name: card
+        required: true
+        schema:
+          $ref: '#/definitions/models.Card'
+      produces:
+      - application/json
+      responses: {}
+      summary: Update card
+      tags:
+      - card
+  /card/{id}/topup:
+    post:
+      consumes:
+      - application/json
+      description: Add money to a card's balance
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Top-up amount
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: Top up card balance
+      tags:
+      - card
+  /card/cardid/{rf_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific card by its card ID (physical card number)
+      parameters:
+      - description: Card ID (physical card number)
+        in: path
+        name: rf_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get card by Card ID
+      tags:
+      - card
+  /card/status/{status}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all cards with a specific status (active, inactive, blocked)
+      parameters:
+      - description: Card status
+        enum:
+        - active
+        - inactive
+        - blocked
+        in: path
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get cards by status
+      tags:
+      - card
+  /card/user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all cards belonging to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get cards by user ID
+      tags:
+      - card
+  /history:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all transaction history records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.History'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get all history records
+      tags:
+      - history
+    post:
+      consumes:
+      - application/json
+      description: Create a new transaction history record for metro card usage
+      parameters:
+      - description: History information
+        in: body
+        name: history
+        required: true
+        schema:
+          $ref: '#/definitions/models.History'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: History saved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.History'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Create a new history record
+      tags:
+      - history
+  /history/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific history record by its ID
+      parameters:
+      - description: History ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: History retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.History'
+              type: object
+        "404":
+          description: History not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get history by ID
+      tags:
+      - history
+  /user/password:
+    put:
+      consumes:
+      - application/json
+      description: Change current user's password
+      parameters:
+      - description: Password change data
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Change user password
+      tags:
+      - user
+  /user/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user's profile information
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Update current user's email and full name
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.User'
+              type: object
+        "400":
+          description: Bad request - validation error or email already exists
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Thông tin không tồn tại
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

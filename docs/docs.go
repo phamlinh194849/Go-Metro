@@ -310,7 +310,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/card/user/{user_id}": {
+        "/card/user/{owner_id}": {
             "get": {
                 "description": "Retrieve all cards belonging to a specific user",
                 "consumes": [
@@ -327,7 +327,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User ID",
-                        "name": "user_id",
+                        "name": "owner_id",
                         "in": "path",
                         "required": true
                     }
@@ -384,38 +384,6 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
-                "description": "Update a specific card's information",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "card"
-                ],
-                "summary": "Update card",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Card ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated card information",
-                        "name": "card",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Card"
-                        }
-                    }
-                ],
-                "responses": {}
-            },
             "delete": {
                 "description": "Delete a specific card from the system",
                 "consumes": [
@@ -440,7 +408,41 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/card/{id}/topup": {
+        "/card/{rf_id}": {
+            "put": {
+                "description": "Update a specific card's information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "card"
+                ],
+                "summary": "Update card",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Card ID",
+                        "name": "rf_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated card information",
+                        "name": "card",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateCardReq"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/card/{rf_id}/topup": {
             "post": {
                 "description": "Add money to a card's balance",
                 "consumes": [
@@ -455,9 +457,9 @@ const docTemplate = `{
                 "summary": "Top up card balance",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Card ID",
-                        "name": "id",
+                        "name": "rf_id",
                         "in": "path",
                         "required": true
                     },
@@ -829,6 +831,23 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.UpdateCardReq": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.Card": {
             "type": "object",
             "properties": {
@@ -841,8 +860,13 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "owner_id": {
-                    "type": "string"
+                "owner": {
+                    "description": "quan hệ belongs-to",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    ]
                 },
                 "price": {
                     "type": "number"
@@ -857,6 +881,10 @@ const docTemplate = `{
                     "$ref": "#/definitions/consts.CardType"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "1-1 nên unique",
                     "type": "string"
                 }
             }

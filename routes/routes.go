@@ -24,10 +24,10 @@ func SetupRoutes(r *gin.Engine) {
 		cardGroup.GET("", handlers.GetCards)                        // Lấy danh sách tất cả cards
 		cardGroup.GET("/:id", handlers.GetCardByID)                 // Lấy card theo ID
 		cardGroup.GET("/cardid/:rf_id", handlers.GetCardByCardID)   // Lấy card theo CardID
-		cardGroup.PUT("/:id", handlers.UpdateCard)                  // Cập nhật card
+		cardGroup.PUT("/:rf_id", handlers.UpdateCard)               // Cập nhật card
 		cardGroup.DELETE("/:id", handlers.DeleteCard)               // Xóa card
-		cardGroup.POST("/:id/topup", handlers.TopUpCard)            // Nạp tiền vào card
-		cardGroup.GET("/user/:user_id", handlers.GetCardsByUser)    // Lấy cards theo user_id
+		cardGroup.POST("/:rf_id/topup", handlers.TopUpCard)         // Nạp tiền vào card
+		cardGroup.GET("/user/:owner_id", handlers.GetCardsByUser)   // Lấy cards theo owner_id
 		cardGroup.GET("/status/:status", handlers.GetCardsByStatus) // Lấy cards theo status
 	}
 

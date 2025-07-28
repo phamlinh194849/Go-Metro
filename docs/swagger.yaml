@@ -57,6 +57,17 @@ definitions:
     required:
     - type
     type: object
+  handlers.UpdateCardReq:
+    properties:
+      balance:
+        type: number
+      owner_id:
+        type: string
+      status:
+        type: string
+      type:
+        type: integer
+    type: object
   models.Card:
     properties:
       balance:
@@ -65,8 +76,10 @@ definitions:
         type: string
       id:
         type: integer
-      owner_id:
-        type: string
+      owner:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: quan hệ belongs-to
       price:
         type: number
       rf_id:
@@ -76,6 +89,9 @@ definitions:
       type:
         $ref: '#/definitions/consts.CardType'
       updated_at:
+        type: string
+      username:
+        description: 1-1 nên unique
         type: string
     type: object
   models.History:
@@ -343,6 +359,7 @@ paths:
       summary: Get card by ID
       tags:
       - card
+  /card/{rf_id}:
     put:
       consumes:
       - application/json
@@ -350,22 +367,22 @@ paths:
       parameters:
       - description: Card ID
         in: path
-        name: id
+        name: rf_id
         required: true
-        type: integer
+        type: string
       - description: Updated card information
         in: body
         name: card
         required: true
         schema:
-          $ref: '#/definitions/models.Card'
+          $ref: '#/definitions/handlers.UpdateCardReq'
       produces:
       - application/json
       responses: {}
       summary: Update card
       tags:
       - card
-  /card/{id}/topup:
+  /card/{rf_id}/topup:
     post:
       consumes:
       - application/json
@@ -373,9 +390,9 @@ paths:
       parameters:
       - description: Card ID
         in: path
-        name: id
+        name: rf_id
         required: true
-        type: integer
+        type: string
       - description: Top-up amount
         in: body
         name: request
@@ -426,7 +443,7 @@ paths:
       summary: Get cards by status
       tags:
       - card
-  /card/user/{user_id}:
+  /card/user/{owner_id}:
     get:
       consumes:
       - application/json
@@ -434,7 +451,7 @@ paths:
       parameters:
       - description: User ID
         in: path
-        name: user_id
+        name: owner_id
         required: true
         type: string
       produces:

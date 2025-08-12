@@ -10,14 +10,14 @@
 - Xem danh sách user (admin) ok
 - Sửa thông tin user (admin) ok
 - Xóa người dùng (admin) ok
-# Quản lý thẻ RFID.
-- Thêm 
-- Xóa
-- Sửa
-# Danh sách trạm
-- Xem
-- Xóa 
-- Sửa
+# Quản lý thẻ RFID. ok
+- Thêm ok
+- Xóa ok
+- Sửa ok
+# Danh sách trạm ok
+- Xem ok
+- Xóa ok
+- Sửa ok
 # Cấp phát vé (Gán dữ liệu người dùng + Thẻ)
 # Báo cáo thống kê
 # Lịch trình chuyến

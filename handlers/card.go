@@ -1,51 +1,52 @@
 package handlers
 
 import (
-	"fmt"
-	"go-metro/config"
-	"go-metro/consts"
-	"go-metro/models"
-	"go-metro/utils"
-	"math/rand"
-	"time"
+  "fmt"
+  "math/rand"
+  "time"
 
-	"github.com/gin-gonic/gin"
+  "go-metro/config"
+  "go-metro/consts"
+  "go-metro/models"
+  "go-metro/utils"
+
+  "github.com/gin-gonic/gin"
 )
 
 // CardRequest struct for creating card (without rf_id as it's auto-generated)
 type CardReq struct {
-	OwnerID string `json:"owner_id"`
-	Type    string `json:"type"  binding:"required"`
+  OwnerID string `json:"owner_id"`
+  Type    string `json:"type"  binding:"required"`
 }
 
 type UpdateCardReq struct {
-	OwnerID string  `json:"owner_id"`
-	Balance float64 `json:"balance" gorm:"default:0"`
-	Status  string  `json:"status"`
-	Type    int
+  OwnerID string  `json:"owner_id"`
+  Balance float64 `json:"balance" gorm:"default:0"`
+  Status  string  `json:"status"`
+  Type    int
 }
 
 func generateCardID() string {
-	rand.Seed(time.Now().UnixNano())
-	randomNumber := rand.Int63n(10000000000) // Generate 10-digit number
-	return fmt.Sprintf("GM%010d", randomNumber)
+  rand.Seed(time.Now().UnixNano())
+  randomNumber := rand.Int63n(10000000000) // Generate 10-digit number
+  return fmt.Sprintf("GM%010d", randomNumber)
 }
 
 func isCardIDUnique(cardID string) bool {
-	var count int64
-	config.DB.Model(&models.Card{}).Where("rf_id = ?", cardID).Count(&count)
-	return count == 0
+  var count int64
+  config.DB.Model(&models.Card{}).Where("rf_id = ?", cardID).Count(&count)
+  return count == 0
 }
 
 func generateUniqueCardID() string {
-	var cardID string
-	for {
-		cardID = generateCardID()
-		if isCardIDUnique(cardID) {
-			break
-		}
-	}
-	return cardID
+  var cardID string
+  for {
+    cardID = generateCardID()
+    if isCardIDUnique(cardID) {
+      break
+    }
+  }
+  return cardID
 }
 
 // OK
@@ -58,53 +59,68 @@ func generateUniqueCardID() string {
 // @Param card body CardReq true "Card information"
 // @Router /card [post]
 func CreateCard(c *gin.Context) {
-	var cardRequest CardReq
+  var cardRequest CardReq
 
-	if err := c.ShouldBindJSON(&cardRequest); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  if err := c.ShouldBindJSON(&cardRequest); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	cardID := generateUniqueCardID()
-	var user models.User
-	if err := config.DB.Where("username = ?", cardRequest.OwnerID).First(&user).Error; err != nil {
-		utils.NotFound(c, "Người dùng không tồn tại")
-		return
-	}
+  cardID := generateUniqueCardID()
+  var user models.User
+  if err := config.DB.Where("username = ?", cardRequest.OwnerID).First(&user).Error; err != nil {
+    utils.NotFound(c, "Người dùng không tồn tại")
+    return
+  }
 
-	card := models.Card{
-		RFID:     cardID,
-		Username: cardRequest.OwnerID,
-	}
+  card := models.Card{
+    RFID:     cardID,
+    Username: cardRequest.OwnerID,
+  }
 
-	// Search OwnerID trong database trước
+  // Search OwnerID trong database trước
 
-	if card.Username != "" {
-		card.Status = consts.ActiveStatus
-	} else {
-		card.Status = consts.InactiveStatus
-	}
+  if card.Username != "" {
+    card.Status = consts.ActiveStatus
+  } else {
+    card.Status = consts.InactiveStatus
+  }
 
-	if cardRequest.Type == consts.StudentCard.ToText() {
-		card.Balance = consts.StudentCard.ToDefaultBlance()
-		card.Price = consts.StudentCard.ToPrice()
-		card.Type = consts.StudentCard
-	} else if cardRequest.Type == consts.NormalCard.ToText() {
-		card.Balance = consts.NormalCard.ToDefaultBlance()
-		card.Price = consts.NormalCard.ToPrice()
-		card.Type = consts.NormalCard
-	} else if cardRequest.Type == consts.VipCard.ToText() {
-		card.Balance = consts.VipCard.ToDefaultBlance()
-		card.Price = consts.VipCard.ToPrice()
-		card.Type = consts.VipCard
-	}
+  if cardRequest.Type == consts.StudentCard.ToText() {
+    card.Balance = consts.StudentCard.ToDefaultBlance()
+    card.Price = consts.StudentCard.ToPrice()
+    card.Type = consts.StudentCard
+  } else if cardRequest.Type == consts.NormalCard.ToText() {
+    card.Balance = consts.NormalCard.ToDefaultBlance()
+    card.Price = consts.NormalCard.ToPrice()
+    card.Type = consts.NormalCard
+  } else if cardRequest.Type == consts.VipCard.ToText() {
+    card.Balance = consts.VipCard.ToDefaultBlance()
+    card.Price = consts.VipCard.ToPrice()
+    card.Type = consts.VipCard
+  }
 
-	if err := config.DB.Create(&card).Error; err != nil {
-		utils.InternalServerError(c, "Lỗi tạo thẻ")
-		return
-	}
+  // Bắt đầu transaction
+  tx := config.DB.Begin()
 
-	utils.SuccessResponse(c, 201, "Tạo thẻ thành công", card)
+  // Tạo card
+  if err := tx.Create(&card).Error; err != nil {
+    tx.Rollback()
+    utils.InternalServerError(c, "Lỗi tạo thẻ")
+    return
+  }
+
+  // Tạo SellHistory log
+  if err := utils.CreateSellHistoryLog(cardID, cardRequest.OwnerID, card.Price); err != nil {
+    tx.Rollback()
+    utils.InternalServerError(c, "Lỗi tạo lịch sử bán thẻ")
+    return
+  }
+
+  // Commit transaction
+  tx.Commit()
+
+  utils.SuccessResponse(c, 201, "Tạo thẻ thành công", card)
 }
 
 // OK
@@ -116,14 +132,14 @@ func CreateCard(c *gin.Context) {
 // @Produce json
 // @Router /card [get]
 func GetCards(c *gin.Context) {
-	var cards []models.Card
+  var cards []models.Card
 
-	if err := config.DB.Find(&cards).Error; err != nil {
-		utils.InternalServerError(c, "không lấy được danh sách thẻ")
-		return
-	}
+  if err := config.DB.Find(&cards).Error; err != nil {
+    utils.InternalServerError(c, "không lấy được danh sách thẻ")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", cards)
+  utils.SuccessResponse(c, 200, "", cards)
 }
 
 // OK
@@ -138,15 +154,15 @@ func GetCards(c *gin.Context) {
 // @Failure 404 {object} utils.Response "Thẻ không tồn tại"
 // @Router /card/{id} [get]
 func GetCardByID(c *gin.Context) {
-	id := c.Param("id")
-	var card models.Card
+  id := c.Param("id")
+  var card models.Card
 
-	if err := config.DB.First(&card, id).Error; err != nil {
-		utils.NotFound(c, "Thẻ không tồn tại")
-		return
-	}
+  if err := config.DB.First(&card, id).Error; err != nil {
+    utils.NotFound(c, "Thẻ không tồn tại")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", card)
+  utils.SuccessResponse(c, 200, "", card)
 }
 
 // OK
@@ -159,15 +175,15 @@ func GetCardByID(c *gin.Context) {
 // @Param rf_id path string true "Card ID (physical card number)"
 // @Router /card/cardid/{rf_id} [get]
 func GetCardByCardID(c *gin.Context) {
-	cardID := c.Param("rf_id")
-	var card models.Card
+  cardID := c.Param("rf_id")
+  var card models.Card
 
-	if err := config.DB.Where("rf_id = ?", cardID).First(&card).Error; err != nil {
-		utils.NotFound(c, "Thẻ không tồn tại")
-		return
-	}
+  if err := config.DB.Where("rf_id = ?", cardID).First(&card).Error; err != nil {
+    utils.NotFound(c, "Thẻ không tồn tại")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", card)
+  utils.SuccessResponse(c, 200, "", card)
 }
 
 // TODO
@@ -181,47 +197,47 @@ func GetCardByCardID(c *gin.Context) {
 // @Param card body UpdateCardReq true "Updated card information"
 // @Router /card/{rf_id} [put]
 func UpdateCard(c *gin.Context) {
-	rf_id := c.Param("rf_id")
-	var card models.Card
+  rf_id := c.Param("rf_id")
+  var card models.Card
 
-	// Check if card exists
-	if err := config.DB.Where("rf_id = ?", rf_id).First(&card).Error; err != nil {
-		utils.NotFound(c, "Thẻ không tồn tại")
-		return
-	}
+  // Check if card exists
+  if err := config.DB.Where("rf_id = ?", rf_id).First(&card).Error; err != nil {
+    utils.NotFound(c, "Thẻ không tồn tại")
+    return
+  }
 
-	// Bind update data
-	var updateData UpdateCardReq
-	updateDataCard := models.Card{
-		Username: updateData.OwnerID,
-		Balance:  updateData.Balance,
-		Status:   consts.Status(updateData.Status),
-		Type:     consts.CardType(updateData.Type),
-	}
+  // Bind update data
+  var updateData UpdateCardReq
+  updateDataCard := models.Card{
+    Username: updateData.OwnerID,
+    Balance:  updateData.Balance,
+    Status:   consts.Status(updateData.Status),
+    Type:     consts.CardType(updateData.Type),
+  }
 
-	switch updateDataCard.Type {
-	case consts.StudentCard:
-		updateDataCard.Price = consts.StudentCard.ToPrice()
-	case consts.NormalCard:
-		updateDataCard.Price = consts.NormalCard.ToPrice()
-	case consts.VipCard:
-		updateDataCard.Price = consts.VipCard.ToPrice()
-	}
+  switch updateDataCard.Type {
+  case consts.StudentCard:
+    updateDataCard.Price = consts.StudentCard.ToPrice()
+  case consts.NormalCard:
+    updateDataCard.Price = consts.NormalCard.ToPrice()
+  case consts.VipCard:
+    updateDataCard.Price = consts.VipCard.ToPrice()
+  }
 
-	if err := c.ShouldBindJSON(&updateDataCard); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  if err := c.ShouldBindJSON(&updateDataCard); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	// Update card
-	if err := config.DB.Model(&card).Updates(updateData).Error; err != nil {
-		utils.InternalServerError(c, "Lỗi cập nhật thẻ")
-		return
-	}
+  // Update card
+  if err := config.DB.Model(&card).Updates(updateData).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi cập nhật thẻ")
+    return
+  }
 
-	// Get updated card
-	config.DB.First(&card, rf_id)
-	utils.SuccessResponse(c, 200, "Cập nhật thành công", card)
+  // Get updated card
+  config.DB.First(&card, rf_id)
+  utils.SuccessResponse(c, 200, "Cập nhật thành công", card)
 }
 
 // DeleteCard handles DELETE /card/:id
@@ -233,20 +249,20 @@ func UpdateCard(c *gin.Context) {
 // @Param id path int true "Card ID"
 // @Router /card/{id} [delete]
 func DeleteCard(c *gin.Context) {
-	id := c.Param("id")
-	var card models.Card
+  id := c.Param("id")
+  var card models.Card
 
-	if err := config.DB.First(&card, id).Error; err != nil {
-		utils.NotFound(c, "Thẻ không tồn tại")
-		return
-	}
+  if err := config.DB.First(&card, id).Error; err != nil {
+    utils.NotFound(c, "Thẻ không tồn tại")
+    return
+  }
 
-	if err := config.DB.Delete(&card).Error; err != nil {
-		utils.InternalServerError(c, "failed to delete card")
-		return
-	}
+  if err := config.DB.Delete(&card).Error; err != nil {
+    utils.InternalServerError(c, "failed to delete card")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "card deleted successfully", nil)
+  utils.SuccessResponse(c, 200, "card deleted successfully", nil)
 }
 
 // TopUpCard handles POST /card/:rf_id/topup
@@ -259,33 +275,49 @@ func DeleteCard(c *gin.Context) {
 // @Param request body object true "Top-up amount"
 // @Router /card/{rf_id}/topup [post]
 func TopUpCard(c *gin.Context) {
-	id := c.Param("rf_id")
-	var card models.Card
+  id := c.Param("rf_id")
+  var card models.Card
 
-	// Check if card exists
-	if err := config.DB.Where("rf_id = ?", id).First(&card).Error; err != nil {
-		utils.NotFound(c, "Thẻ không tồn tại")
-		return
-	}
+  // Check if card exists
+  if err := config.DB.Where("rf_id = ?", id).First(&card).Error; err != nil {
+    utils.NotFound(c, "Thẻ không tồn tại")
+    return
+  }
 
-	// Parse amount from request
-	var request struct {
-		Amount float64 `json:"amount" binding:"required,gt=0"`
-	}
+  // Parse amount from request
+  var request struct {
+    Amount float64 `json:"amount" binding:"required,gt=0"`
+  }
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.BadRequest(c, "số tiền không hợp lệ")
-		return
-	}
+  if err := c.ShouldBindJSON(&request); err != nil {
+    utils.BadRequest(c, "số tiền không hợp lệ")
+    return
+  }
 
-	// Update balance
-	card.Balance += request.Amount
-	if err := config.DB.Save(&card).Error; err != nil {
-		utils.InternalServerError(c, "Nạp tiền thất bại")
-		return
-	}
+  // Bắt đầu transaction
+  tx := config.DB.Begin()
 
-	utils.SuccessResponse(c, 200, "Nạp tiền thành công", card)
+  // Update balance
+  oldBalance := card.Balance
+  newBalance := oldBalance + request.Amount
+  card.Balance = newBalance
+  if err := tx.Save(&card).Error; err != nil {
+    tx.Rollback()
+    utils.InternalServerError(c, "Nạp tiền thất bại")
+    return
+  }
+
+  // Tạo History log cho topup
+  if err := utils.CreateCardTopupHistory(card.RFID, card.Username, request.Amount, card.Balance); err != nil {
+    tx.Rollback()
+    utils.InternalServerError(c, "Lỗi tạo lịch sử nạp tiền")
+    return
+  }
+
+  // Commit transaction
+  tx.Commit()
+
+  utils.SuccessResponse(c, 200, "Nạp tiền thành công", card)
 }
 
 // GetCardsByUser handles GET /card/user/:owner_id
@@ -297,15 +329,15 @@ func TopUpCard(c *gin.Context) {
 // @Param owner_id path string true "User ID"
 // @Router /card/user/{owner_id} [get]
 func GetCardsByUser(c *gin.Context) {
-	username := c.Param("owner_id")
-	var cards []models.Card
+  username := c.Param("owner_id")
+  var cards []models.Card
 
-	if err := config.DB.Where("username = ?", username).Find(&cards).Error; err != nil {
-		utils.InternalServerError(c, "failed to fetch user cards")
-		return
-	}
+  if err := config.DB.Where("username = ?", username).Find(&cards).Error; err != nil {
+    utils.InternalServerError(c, "failed to fetch user cards")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", cards)
+  utils.SuccessResponse(c, 200, "", cards)
 }
 
 // GetCardsByStatus handles GET /card/status/:status
@@ -317,13 +349,13 @@ func GetCardsByUser(c *gin.Context) {
 // @Param status path string true "Card status" Enums(active, inactive, blocked)
 // @Router /card/status/{status} [get]
 func GetCardsByStatus(c *gin.Context) {
-	status := c.Param("status")
-	var cards []models.Card
+  status := c.Param("status")
+  var cards []models.Card
 
-	if err := config.DB.Where("status = ?", status).Find(&cards).Error; err != nil {
-		utils.InternalServerError(c, "failed to fetch cards by status")
-		return
-	}
+  if err := config.DB.Where("status = ?", status).Find(&cards).Error; err != nil {
+    utils.InternalServerError(c, "failed to fetch cards by status")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", cards)
+  utils.SuccessResponse(c, 200, "", cards)
 }

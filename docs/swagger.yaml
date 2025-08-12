@@ -57,6 +57,29 @@ definitions:
     required:
     - type
     type: object
+  handlers.CheckInRequest:
+    properties:
+      card_id:
+        type: string
+    required:
+    - card_id
+    type: object
+  handlers.CheckOutRequest:
+    properties:
+      card_id:
+        type: string
+    required:
+    - card_id
+    type: object
+  handlers.StationReq:
+    properties:
+      ip_address:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
   handlers.UpdateCardReq:
     properties:
       balance:
@@ -76,10 +99,6 @@ definitions:
         type: string
       id:
         type: integer
-      owner:
-        allOf:
-        - $ref: '#/definitions/models.User'
-        description: quan hệ belongs-to
       price:
         type: number
       rf_id:
@@ -90,6 +109,10 @@ definitions:
         $ref: '#/definitions/consts.CardType'
       updated_at:
         type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: quan hệ belongs-to
       username:
         description: 1-1 nên unique
         type: string
@@ -113,6 +136,104 @@ definitions:
       user_action:
         $ref: '#/definitions/consts.UserAction'
       user_id:
+        type: string
+    type: object
+  models.SellHistory:
+    properties:
+      card:
+        allOf:
+        - $ref: '#/definitions/models.Card'
+        description: Foreign key relationships
+      card_id:
+        type: string
+      card_price_sold:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      seller:
+        $ref: '#/definitions/models.User'
+      seller_id:
+        type: string
+      time:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Station:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      ip_address:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.StationHistory:
+    properties:
+      action:
+        description: '"checkin" hoặc "checkout"'
+        type: string
+      card:
+        allOf:
+        - $ref: '#/definitions/models.Card'
+        description: Foreign key relationships
+      card_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      station:
+        $ref: '#/definitions/models.Station'
+      station_id:
+        type: integer
+      time:
+        type: string
+      updated_at:
+        type: string
+      used_balance:
+        type: number
+    type: object
+  models.Train:
+    properties:
+      company:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Trip:
+    properties:
+      created_at:
+        type: string
+      direction:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      start_time:
+        type: string
+      train:
+        allOf:
+        - $ref: '#/definitions/models.Train'
+        description: Foreign key relationships
+      train_id:
+        type: integer
+      updated_at:
         type: string
     type: object
   models.User:
@@ -486,40 +607,6 @@ paths:
       summary: Get all history records
       tags:
       - history
-    post:
-      consumes:
-      - application/json
-      description: Create a new transaction history record for metro card usage
-      parameters:
-      - description: History information
-        in: body
-        name: history
-        required: true
-        schema:
-          $ref: '#/definitions/models.History'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: History saved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/utils.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.History'
-              type: object
-        "400":
-          description: Bad request - validation error
-          schema:
-            $ref: '#/definitions/utils.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/utils.Response'
-      summary: Create a new history record
-      tags:
-      - history
   /history/{id}:
     get:
       consumes:
@@ -550,6 +637,1076 @@ paths:
       summary: Get history by ID
       tags:
       - history
+  /sell-history:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all sell history records with optional filtering
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of records per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by card ID
+        in: query
+        name: card_id
+        type: string
+      - description: Filter by seller ID
+        in: query
+        name: seller_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sell histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.SellHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get all sell history records
+      tags:
+      - sell-history
+  /sell-history/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific sell history record by its ID
+      parameters:
+      - description: Sell History ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sell history retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SellHistory'
+              type: object
+        "404":
+          description: Sell history not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get sell history by ID
+      tags:
+      - sell-history
+  /sell-history/card/{card_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all sell history records for a specific card
+      parameters:
+      - description: Card ID
+        in: path
+        name: card_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sell histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.SellHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get sell histories by card ID
+      tags:
+      - sell-history
+  /sell-history/seller/{seller_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all sell history records for a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: seller_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sell histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.SellHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get sell histories by seller ID
+      tags:
+      - sell-history
+  /station:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all metro stations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stations retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Station'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get all stations
+      tags:
+      - station
+    post:
+      consumes:
+      - application/json
+      description: Create a new metro station
+      parameters:
+      - description: Station information
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.StationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Station'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Create a new station
+      tags:
+      - station
+  /station-history:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all station history records with optional filtering
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of records per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by card ID
+        in: query
+        name: card_id
+        type: string
+      - description: Filter by station ID
+        in: query
+        name: station_id
+        type: integer
+      - description: Filter by action (checkin/checkout)
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.StationHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get all station history records
+      tags:
+      - station-history
+  /station-history/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific station history record by its ID
+      parameters:
+      - description: Station History ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station history retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StationHistory'
+              type: object
+        "404":
+          description: Station history not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get station history by ID
+      tags:
+      - station-history
+  /station-history/action/{action}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all station history records for a specific action (checkin/checkout)
+      parameters:
+      - description: Action (checkin/checkout)
+        in: path
+        name: action
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.StationHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get station histories by action
+      tags:
+      - station-history
+  /station-history/card/{card_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all station history records for a specific card
+      parameters:
+      - description: Card ID
+        in: path
+        name: card_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.StationHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get station histories by card ID
+      tags:
+      - station-history
+  /station-history/station/{station_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all station history records for a specific station
+      parameters:
+      - description: Station ID
+        in: path
+        name: station_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station histories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.StationHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get station histories by station ID
+      tags:
+      - station-history
+  /station/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a station
+      parameters:
+      - description: Station ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station deleted successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Station not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Delete station
+      tags:
+      - station
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific station by its ID
+      parameters:
+      - description: Station ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Station'
+              type: object
+        "404":
+          description: Station not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get station by ID
+      tags:
+      - station
+    put:
+      consumes:
+      - application/json
+      description: Update an existing station
+      parameters:
+      - description: Station ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated station information
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.StationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Station'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Station not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Update station
+      tags:
+      - station
+  /station/{id}/checkin:
+    post:
+      consumes:
+      - application/json
+      description: Check in a card at a specific station
+      parameters:
+      - description: Station ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Check-in information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CheckInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Check-in successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StationHistory'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Station or card not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Check in at station
+      tags:
+      - station
+  /station/{id}/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Check out a card at a specific station and deduct fare
+      parameters:
+      - description: Station ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Check-out information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CheckOutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Check-out successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StationHistory'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Station or card not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Check out at station
+      tags:
+      - station
+  /train:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all train records with optional filtering
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of records per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by train type
+        in: query
+        name: type
+        type: string
+      - description: Filter by company
+        in: query
+        name: company
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trains retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Train'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get all train records
+      tags:
+      - train
+    post:
+      consumes:
+      - application/json
+      description: Create a new train record
+      parameters:
+      - description: Train information
+        in: body
+        name: train
+        required: true
+        schema:
+          $ref: '#/definitions/models.Train'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Train created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Train'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Create a new train record
+      tags:
+      - train
+  /train/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a train record
+      parameters:
+      - description: Train ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Train deleted successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Train not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Delete train
+      tags:
+      - train
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific train record by its ID
+      parameters:
+      - description: Train ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Train retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Train'
+              type: object
+        "404":
+          description: Train not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get train by ID
+      tags:
+      - train
+    put:
+      consumes:
+      - application/json
+      description: Update an existing train record
+      parameters:
+      - description: Train ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated train information
+        in: body
+        name: train
+        required: true
+        schema:
+          $ref: '#/definitions/models.Train'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Train updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Train'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Train not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Update train
+      tags:
+      - train
+  /train/company/{company}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all train records for a specific company
+      parameters:
+      - description: Company name
+        in: path
+        name: company
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trains retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Train'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get trains by company
+      tags:
+      - train
+  /train/type/{type}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all train records for a specific type
+      parameters:
+      - description: Train type
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trains retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Train'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get trains by type
+      tags:
+      - train
+  /trip:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all trip records with optional filtering
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of records per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by train ID
+        in: query
+        name: train_id
+        type: integer
+      - description: Filter by direction
+        in: query
+        name: direction
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trips retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Trip'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get all trip records
+      tags:
+      - trip
+    post:
+      consumes:
+      - application/json
+      description: Create a new trip record for train journeys
+      parameters:
+      - description: Trip information
+        in: body
+        name: trip
+        required: true
+        schema:
+          $ref: '#/definitions/models.Trip'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trip created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Trip'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Create a new trip record
+      tags:
+      - trip
+  /trip/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a trip record
+      parameters:
+      - description: Trip ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trip deleted successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Trip not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Delete trip
+      tags:
+      - trip
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific trip record by its ID
+      parameters:
+      - description: Trip ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trip retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Trip'
+              type: object
+        "404":
+          description: Trip not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get trip by ID
+      tags:
+      - trip
+    put:
+      consumes:
+      - application/json
+      description: Update an existing trip record
+      parameters:
+      - description: Trip ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated trip information
+        in: body
+        name: trip
+        required: true
+        schema:
+          $ref: '#/definitions/models.Trip'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trip updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Trip'
+              type: object
+        "400":
+          description: Bad request - validation error
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Trip not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Update trip
+      tags:
+      - trip
+  /trip/active:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all currently active trips (where end_time is null or
+        in the future)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Active trips retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Trip'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get active trips
+      tags:
+      - trip
+  /trip/direction/{direction}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all trip records for a specific direction
+      parameters:
+      - description: Direction
+        in: path
+        name: direction
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trips retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Trip'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get trips by direction
+      tags:
+      - trip
+  /trip/train/{train_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all trip records for a specific train
+      parameters:
+      - description: Train ID
+        in: path
+        name: train_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trips retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Trip'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Get trips by train ID
+      tags:
+      - trip
   /user/password:
     put:
       consumes:

@@ -13,6 +13,10 @@ type SellHistory struct {
 	Time          time.Time `json:"time"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+
+	// Foreign key relationships
+	Card   Card `gorm:"foreignKey:CardID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"card"`
+	Seller User `gorm:"foreignKey:SellerID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"seller"`
 }
 
 func MigrateSellHistory() {

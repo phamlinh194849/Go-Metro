@@ -14,6 +14,10 @@ type StationHistory struct {
 	UsedBalance float64  `json:"used_balance"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+
+	// Foreign key relationships
+	Card    Card    `gorm:"foreignKey:CardID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"card"`
+	Station Station `gorm:"foreignKey:StationID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"station"`
 }
 
 func MigrateStationHistory() {

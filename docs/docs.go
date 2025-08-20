@@ -2946,7 +2946,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "gometro-backend-production.up.railway.app",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Go Metro API",

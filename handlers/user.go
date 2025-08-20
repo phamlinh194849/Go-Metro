@@ -108,10 +108,6 @@ func Register(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body LoginReq true "Login credentials"
-// @Success 200 {object} utils.Response{data=map[string]interface{user=LoginRes,token=string}} "Login successful"
-// @Failure 400 {object} utils.Response "Bad request - invalid email or password"
-// @Failure 401 {object} utils.Response "Unauthorized - account inactive"
-// @Failure 500 {object} utils.Response "Internal server error"
 // @Router /auth/login [post]
 func Login(c *gin.Context) {
   var request LoginReq
@@ -153,7 +149,7 @@ func Login(c *gin.Context) {
     Username: user.Username,
   }
 
-  utils.SuccessResponse(c, 200, "login successful", gin.H{
+  utils.SuccessResponse(c, 200, "Đã đăng nhập thành công!", gin.H{
     "user":  login,
     "token": token,
   })

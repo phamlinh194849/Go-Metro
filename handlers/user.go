@@ -1,50 +1,50 @@
 package handlers
 
 import (
-	"go-metro/config"
-	"go-metro/consts"
-	"go-metro/models"
-	"go-metro/utils"
+  "go-metro/config"
+  "go-metro/consts"
+  "go-metro/models"
+  "go-metro/utils"
 
-	"github.com/gin-gonic/gin"
+  "github.com/gin-gonic/gin"
 )
 
 type RegisterReq struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required,min=6"`
-	Email    string `json:"email" binding:"required,email"`
-	FullName string `json:"full_name" binding:"required"`
+  Username string `json:"username" binding:"required"`
+  Password string `json:"password" binding:"required,min=6"`
+  Email    string `json:"email" binding:"required,email"`
+  FullName string `json:"full_name" binding:"required"`
 }
 
 type LoginReq struct {
-	Password string `json:"password" binding:"required,min=6"`
-	Email    string `json:"email" binding:"required,email"`
+  Password string `json:"password" binding:"required,min=6"`
+  Email    string `json:"email" binding:"required,email"`
 }
 
 type LoginRes struct {
-	Email    string `json:"email"`
-	Role     string `json:"role"`
-	Username string `json:"username"`
+  Email    string `json:"email"`
+  Role     string `json:"role"`
+  Username string `json:"username"`
 }
 
 // Bind update data
 type UpdateInfoReq struct {
-	Username string `json:"username"`
-	FullName string `json:"full_name"`
+  Username string `json:"username"`
+  FullName string `json:"full_name"`
 }
 
 // Bind request data
 type ChangePasswordReq struct {
-	OldPassword string `json:"old_password" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
+  OldPassword string `json:"old_password" binding:"required"`
+  NewPassword string `json:"new_password" binding:"required,min=6"`
 }
 
 type AdminUpdateInfoReq struct {
-	Email    string `json:"email"`
-	FullName string `json:"full_name"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	Status   string `json:"status"`
+  Email    string `json:"email"`
+  FullName string `json:"full_name"`
+  Username string `json:"username"`
+  Role     string `json:"role"`
+  Status   string `json:"status"`
 }
 
 // Ok
@@ -54,101 +54,109 @@ type AdminUpdateInfoReq struct {
 // @Tags auth
 // @Accept json
 // @Produce json
+// @Param request body RegisterReq true "User registration data"
+// @Success 201 {object} utils.Response{data=models.User} "Đã tạo tài khoản thành công"
+// @Failure 400 {object} utils.Response "Bad request - validation error, email/username already exists"
+// @Failure 500 {object} utils.Response "Internal server error"
 // @Router /auth/register [post]
 func Register(c *gin.Context) {
-	var request RegisterReq
+  var request RegisterReq
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  if err := c.ShouldBindJSON(&request); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	// Check if username already exists
-	var existingUser models.User
-	if err := config.DB.Where("username = ?", request.Username).First(&existingUser).Error; err == nil {
-		utils.BadRequest(c, "Tên người dùng đã tồn")
-		return
-	}
+  // Check if username already exists
+  var existingUser models.User
+  if err := config.DB.Where("username = ?", request.Username).First(&existingUser).Error; err == nil {
+    utils.BadRequest(c, "Tên người dùng đã tồn")
+    return
+  }
 
-	// Check if email already exists
-	if err := config.DB.Where("email = ?", request.Email).First(&existingUser).Error; err == nil {
-		utils.BadRequest(c, "Email đã tồn tại")
-		return
-	}
+  // Check if email already exists
+  if err := config.DB.Where("email = ?", request.Email).First(&existingUser).Error; err == nil {
+    utils.BadRequest(c, "Email đã tồn tại")
+    return
+  }
 
-	// Create new user
-	user := models.User{
-		Username: request.Username,
-		Password: utils.HashPassword(request.Password),
-		Email:    request.Email,
-		FullName: request.FullName,
-		Role:     2, // Default role user
-		Status:   "active",
-	}
+  // Create new user
+  user := models.User{
+    Username: request.Username,
+    Password: utils.HashPassword(request.Password),
+    Email:    request.Email,
+    FullName: request.FullName,
+    Role:     2, // Default role user
+    Status:   "active",
+  }
 
-	if err := config.DB.Create(&user).Error; err != nil {
-		utils.InternalServerError(c, "Lỗi khi tạo tài khoản")
-		return
-	}
+  if err := config.DB.Create(&user).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi tạo tài khoản")
+    return
+  }
 
-	utils.SuccessResponse(c, 201, "Đã tạo tài khoản thành công", gin.H{
-		"user": user,
-	})
+  utils.SuccessResponse(c, 201, "Đã tạo tài khoản thành công", gin.H{
+    "user": user,
+  })
 }
 
 // Ok
 // Login handles POST /auth/login
 // @Summary User login
-// @Description Authenticate user with username and password
+// @Description Authenticate user with email and password, returns JWT token
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body object true "Login credentials" schema={
+// @Param request body LoginReq true "Login credentials"
+// @Success 200 {object} utils.Response{data=map[string]interface{user=LoginRes,token=string}} "Login successful"
+// @Failure 400 {object} utils.Response "Bad request - invalid email or password"
+// @Failure 401 {object} utils.Response "Unauthorized - account inactive"
+// @Failure 500 {object} utils.Response "Internal server error"
 // @Router /auth/login [post]
 func Login(c *gin.Context) {
-	var request LoginReq
+  var request LoginReq
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  if err := c.ShouldBindJSON(&request); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	// Find user by username
-	var user models.User
-	if err := config.DB.Where("email = ?", request.Email).First(&user).Error; err != nil {
-		utils.BadRequest(c, "Email không đúng")
-		return
-	}
+  // Find user by username
+  var user models.User
+  if err := config.DB.Where("email = ?", request.Email).First(&user).Error; err != nil {
+    utils.BadRequest(c, "Email không đúng")
+    return
+  }
 
-	// Check password
-	if user.Password != utils.HashPassword(request.Password) {
-		utils.BadRequest(c, "Sai mật khẩu")
-		return
-	}
+  // Check password
+  if user.Password != utils.HashPassword(request.Password) {
+    utils.BadRequest(c, "Sai mật khẩu")
+    return
+  }
 
-	// Check if user is active
-	if user.Status != "active" {
-		utils.BadRequest(c, "Tài khoản bị khóa")
-		return
-	}
+  // Check if user is active
+  if user.Status != "active" {
+    utils.BadRequest(c, "Tài khoản bị khóa")
+    return
+  }
 
-	// Generate token
-	token, err := utils.GenerateToken(user.ID, user.Email, int(user.Role))
-	if err != nil {
-		utils.InternalServerError(c, "Lỗi trong quá trình tạo token ")
-		return
-	}
+  // Generate token
+  token, err := utils.GenerateToken(user.ID, user.Email, int(user.Role))
+  if err != nil {
+    utils.InternalServerError(c, "Lỗi trong quá trình tạo token ")
+    return
+  }
 
-	login := LoginRes{
-		Email:    user.Email,
-		Role:     user.Role.ToText(),
-		Username: user.Username,
-	}
+  login := LoginRes{
+    Email:    user.Email,
+    Role:     user.Role.ToText(),
+    Username: user.Username,
+  }
 
-	utils.SuccessResponse(c, 200, "login successful", gin.H{
-		"user":  login,
-		"token": token,
-	})
+  utils.SuccessResponse(c, 200, "login successful", gin.H{
+    "user":  login,
+    "token": token,
+  })
 }
 
 // Ok
@@ -161,15 +169,15 @@ func Login(c *gin.Context) {
 // @Security BearerAuth
 // @Router /user/profile [get]
 func GetProfile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	var user models.User
+  userID, _ := c.Get("user_id")
+  var user models.User
 
-	if err := config.DB.First(&user, userID).Error; err != nil {
-		utils.NotFound(c, "Thông tin không tồn tại")
-		return
-	}
+  if err := config.DB.First(&user, userID).Error; err != nil {
+    utils.NotFound(c, "Thông tin không tồn tại")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", user)
+  utils.SuccessResponse(c, 200, "", user)
 }
 
 // Ok
@@ -196,42 +204,42 @@ func GetProfile(c *gin.Context) {
 // @Failure 500 {object} utils.Response "Internal server error"
 // @Router /user/profile [put]
 func UpdateProfile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	var user models.User
+  userID, _ := c.Get("user_id")
+  var user models.User
 
-	// Check if user exists
-	if err := config.DB.First(&user, userID).Error; err != nil {
-		utils.NotFound(c, "Thông tin không tồn tại")
-		return
-	}
+  // Check if user exists
+  if err := config.DB.First(&user, userID).Error; err != nil {
+    utils.NotFound(c, "Thông tin không tồn tại")
+    return
+  }
 
-	// Bind update data
-	request := UpdateInfoReq{}
-	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  // Bind update data
+  request := UpdateInfoReq{}
+  if err := c.ShouldBindJSON(&request); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	// Update user
-	if request.Username != "" {
-		var existingUser models.User
-		if err := config.DB.Where("username = ? AND id != ?", request.Username, userID).First(&existingUser).Error; err == nil {
-			utils.BadRequest(c, "username already exists")
-			return
-		}
-		user.Username = request.Username
-	}
+  // Update user
+  if request.Username != "" {
+    var existingUser models.User
+    if err := config.DB.Where("username = ? AND id != ?", request.Username, userID).First(&existingUser).Error; err == nil {
+      utils.BadRequest(c, "username already exists")
+      return
+    }
+    user.Username = request.Username
+  }
 
-	if request.FullName != "" {
-		user.FullName = request.FullName
-	}
+  if request.FullName != "" {
+    user.FullName = request.FullName
+  }
 
-	if err := config.DB.Save(&user).Error; err != nil {
-		utils.InternalServerError(c, "Lỗi khi cập nhật thông tin người dùng")
-		return
-	}
+  if err := config.DB.Save(&user).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi cập nhật thông tin người dùng")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "Cập nhật thành công", user)
+  utils.SuccessResponse(c, 200, "Cập nhật thành công", user)
 }
 
 // Ok
@@ -245,37 +253,37 @@ func UpdateProfile(c *gin.Context) {
 // @Param request body object true "Password change data" schema={
 // @Router /user/password [put]
 func ChangePassword(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	var user models.User
+  userID, _ := c.Get("user_id")
+  var user models.User
 
-	// Check if user exists
-	if err := config.DB.First(&user, userID).Error; err != nil {
-		utils.NotFound(c, "Thông tin không tồn tại")
-		return
-	}
+  // Check if user exists
+  if err := config.DB.First(&user, userID).Error; err != nil {
+    utils.NotFound(c, "Thông tin không tồn tại")
+    return
+  }
 
-	// Bind request data
-	request := ChangePasswordReq{}
+  // Bind request data
+  request := ChangePasswordReq{}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  if err := c.ShouldBindJSON(&request); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	// Verify old password
-	if user.Password != utils.HashPassword(request.OldPassword) {
-		utils.BadRequest(c, "Mật khẩu cũ không đúng")
-		return
-	}
+  // Verify old password
+  if user.Password != utils.HashPassword(request.OldPassword) {
+    utils.BadRequest(c, "Mật khẩu cũ không đúng")
+    return
+  }
 
-	// Update password
-	user.Password = utils.HashPassword(request.NewPassword)
-	if err := config.DB.Save(&user).Error; err != nil {
-		utils.InternalServerError(c, "failed to change password")
-		return
-	}
+  // Update password
+  user.Password = utils.HashPassword(request.NewPassword)
+  if err := config.DB.Save(&user).Error; err != nil {
+    utils.InternalServerError(c, "failed to change password")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "Đổi mật khẩu thành công", nil)
+  utils.SuccessResponse(c, 200, "Đổi mật khẩu thành công", nil)
 }
 
 // Ok
@@ -288,14 +296,14 @@ func ChangePassword(c *gin.Context) {
 // @Security BearerAuth
 // @Router /admin/users [get]
 func GetAllUsers(c *gin.Context) {
-	var users []models.User
+  var users []models.User
 
-	if err := config.DB.Find(&users).Error; err != nil {
-		utils.InternalServerError(c, "Lỗi khi lấy danh sách người dùng")
-		return
-	}
+  if err := config.DB.Find(&users).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi lấy danh sách người dùng")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", users)
+  utils.SuccessResponse(c, 200, "", users)
 }
 
 // Ok
@@ -309,15 +317,15 @@ func GetAllUsers(c *gin.Context) {
 // @Param id path int true "User ID"
 // @Router /admin/users/{id} [get]
 func GetUserByID(c *gin.Context) {
-	id := c.Param("id")
-	var user models.User
+  id := c.Param("id")
+  var user models.User
 
-	if err := config.DB.First(&user, id).Error; err != nil {
-		utils.NotFound(c, "Thông tin không tồn tại")
-		return
-	}
+  if err := config.DB.First(&user, id).Error; err != nil {
+    utils.NotFound(c, "Thông tin không tồn tại")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "", user)
+  utils.SuccessResponse(c, 200, "", user)
 }
 
 // Ok
@@ -332,74 +340,74 @@ func GetUserByID(c *gin.Context) {
 // @Param request body object true "User update data" schema={
 // @Router /admin/users/{id} [put]
 func UpdateUser(c *gin.Context) {
-	id := c.Param("id")
-	var user models.User
+  id := c.Param("id")
+  var user models.User
 
-	// Check if user exists
-	if err := config.DB.First(&user, id).Error; err != nil {
-		utils.NotFound(c, "Thông tin không tồn tại")
-		return
-	}
+  // Check if user exists
+  if err := config.DB.First(&user, id).Error; err != nil {
+    utils.NotFound(c, "Thông tin không tồn tại")
+    return
+  }
 
-	// Bind update data
-	request := AdminUpdateInfoReq{}
+  // Bind update data
+  request := AdminUpdateInfoReq{}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
+  if err := c.ShouldBindJSON(&request); err != nil {
+    utils.BadRequest(c, err.Error())
+    return
+  }
 
-	// Update user
-	if request.Email != "" {
-		var existingUser models.User
-		if err := config.DB.Where("email = ? AND id != ?", request.Email, id).First(&existingUser).Error; err == nil {
-			utils.BadRequest(c, "Email đã tồn tại")
-			return
-		}
-		user.Email = request.Email
-	}
-	if request.Username != "" {
-		var existingUser models.User
-		if err := config.DB.Where("username = ? AND id != ?", request.Username, id).First(&existingUser).Error; err == nil {
-			utils.BadRequest(c, "Tên người dùng đã tồn tại")
-			return
-		}
-		user.Username = request.Username
-	}
-	if request.FullName != "" {
-		user.FullName = request.FullName
-	}
+  // Update user
+  if request.Email != "" {
+    var existingUser models.User
+    if err := config.DB.Where("email = ? AND id != ?", request.Email, id).First(&existingUser).Error; err == nil {
+      utils.BadRequest(c, "Email đã tồn tại")
+      return
+    }
+    user.Email = request.Email
+  }
+  if request.Username != "" {
+    var existingUser models.User
+    if err := config.DB.Where("username = ? AND id != ?", request.Username, id).First(&existingUser).Error; err == nil {
+      utils.BadRequest(c, "Tên người dùng đã tồn tại")
+      return
+    }
+    user.Username = request.Username
+  }
+  if request.FullName != "" {
+    user.FullName = request.FullName
+  }
 
-	if request.Role != "" {
-		roleMap := map[string]consts.Role{
-			"admin": consts.AdminRole,
-			"user":  consts.UserRole,
-			"staff": consts.StaffRole,
-		}
+  if request.Role != "" {
+    roleMap := map[string]consts.Role{
+      "admin": consts.AdminRole,
+      "user":  consts.UserRole,
+      "staff": consts.StaffRole,
+    }
 
-		roleValue, exists := roleMap[request.Role]
-		if !exists {
-			utils.BadRequest(c, "Vai trò không đúng")
-			return
-		}
+    roleValue, exists := roleMap[request.Role]
+    if !exists {
+      utils.BadRequest(c, "Vai trò không đúng")
+      return
+    }
 
-		user.Role = roleValue
-	}
+    user.Role = roleValue
+  }
 
-	if request.Status != "" {
-		if request.Status != "active" && request.Status != "inactive" {
-			utils.BadRequest(c, "Không xác định")
-			return
-		}
-		user.Status = request.Status
-	}
+  if request.Status != "" {
+    if request.Status != "active" && request.Status != "inactive" {
+      utils.BadRequest(c, "Không xác định")
+      return
+    }
+    user.Status = request.Status
+  }
 
-	if err := config.DB.Save(&user).Error; err != nil {
-		utils.InternalServerError(c, "failed to update user")
-		return
-	}
+  if err := config.DB.Save(&user).Error; err != nil {
+    utils.InternalServerError(c, "failed to update user")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "Cập nhật thông tin người dùng thành công", user)
+  utils.SuccessResponse(c, 200, "Cập nhật thông tin người dùng thành công", user)
 }
 
 // Ok
@@ -418,18 +426,18 @@ func UpdateUser(c *gin.Context) {
 // @Failure 500 {object} utils.Response "Internal server error"
 // @Router /admin/users/{id} [delete]
 func DeleteUser(c *gin.Context) {
-	id := c.Param("id")
-	var user models.User
+  id := c.Param("id")
+  var user models.User
 
-	if err := config.DB.First(&user, id).Error; err != nil {
-		utils.NotFound(c, "Thông tin không tồn tại")
-		return
-	}
+  if err := config.DB.First(&user, id).Error; err != nil {
+    utils.NotFound(c, "Thông tin không tồn tại")
+    return
+  }
 
-	if err := config.DB.Delete(&user).Error; err != nil {
-		utils.InternalServerError(c, "failed to delete user")
-		return
-	}
+  if err := config.DB.Delete(&user).Error; err != nil {
+    utils.InternalServerError(c, "failed to delete user")
+    return
+  }
 
-	utils.SuccessResponse(c, 200, "Xóa thành công", nil)
+  utils.SuccessResponse(c, 200, "Xóa thành công", nil)
 }

@@ -1,6 +1,9 @@
 package handlers
 
 import (
+  "math/rand"
+  "time"
+
   "go-metro/config"
   "go-metro/consts"
   "go-metro/models"
@@ -10,7 +13,6 @@ import (
 )
 
 type RegisterReq struct {
-  Username string `json:"username" binding:"required"`
   Password string `json:"password" binding:"required,min=6"`
   Email    string `json:"email" binding:"required,email"`
   FullName string `json:"full_name" binding:"required"`
@@ -69,10 +71,10 @@ func Register(c *gin.Context) {
 
   // Check if username already exists
   var existingUser models.User
-  if err := config.DB.Where("username = ?", request.Username).First(&existingUser).Error; err == nil {
-    utils.BadRequest(c, "Tên người dùng đã tồn")
-    return
-  }
+  //if err := config.DB.Where("username = ?", request.Username).First(&existingUser).Error; err == nil {
+  //  utils.BadRequest(c, "Tên người dùng đã tồn")
+  //  return
+  //}
 
   // Check if email already exists
   if err := config.DB.Where("email = ?", request.Email).First(&existingUser).Error; err == nil {
@@ -80,9 +82,10 @@ func Register(c *gin.Context) {
     return
   }
 
+  //username := RandomUsername()
+
   // Create new user
   user := models.User{
-    Username: request.Username,
     Password: utils.HashPassword(request.Password),
     Email:    request.Email,
     FullName: request.FullName,
@@ -98,6 +101,12 @@ func Register(c *gin.Context) {
   utils.SuccessResponse(c, 201, "Đã tạo tài khoản thành công", gin.H{
     "user": user,
   })
+}
+
+func RandomUsername() int64 {
+  rand.Seed(time.Now().UnixNano())
+  // random số từ 10^9 đến 10^12 (12 chữ số chẳng hạn)
+  return rand.Int63n(1_000_000_000_000-1_000_000_000) + 1_000_000_000
 }
 
 // Ok
@@ -144,9 +153,8 @@ func Login(c *gin.Context) {
   }
 
   login := LoginRes{
-    Email:    user.Email,
-    Role:     user.Role.ToText(),
-    Username: user.Username,
+    Email: user.Email,
+    Role:  user.Role.ToText(),
   }
 
   utils.SuccessResponse(c, 200, "Đã đăng nhập thành công!", gin.H{
@@ -223,7 +231,6 @@ func UpdateProfile(c *gin.Context) {
       utils.BadRequest(c, "username already exists")
       return
     }
-    user.Username = request.Username
   }
 
   if request.FullName != "" {
@@ -368,7 +375,6 @@ func UpdateUser(c *gin.Context) {
       utils.BadRequest(c, "Tên người dùng đã tồn tại")
       return
     }
-    user.Username = request.Username
   }
   if request.FullName != "" {
     user.FullName = request.FullName

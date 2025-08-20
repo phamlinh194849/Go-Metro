@@ -298,11 +298,11 @@ func CheckOut(c *gin.Context) {
   }
 
   // Tạo History log cho payment
-  if err := utils.CreateCardPaymentHistory(request.CardID, card.Username, fare, card.Balance); err != nil {
-    tx.Rollback()
-    utils.InternalServerError(c, "failed to create payment history")
-    return
-  }
+  //if err := utils.CreateCardPaymentHistory(request.CardID, card.Username, fare, card.Balance); err != nil {
+  //  tx.Rollback()
+  //  utils.InternalServerError(c, "failed to create payment history")
+  //  return
+  //}
 
   // Commit transaction
   tx.Commit()

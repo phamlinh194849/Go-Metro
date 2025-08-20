@@ -74,17 +74,17 @@ func CreateCard(c *gin.Context) {
   }
 
   card := models.Card{
-    RFID:     cardID,
-    Username: cardRequest.OwnerID,
+    RFID: cardID,
+    //Username: cardRequest.OwnerID,
   }
 
   // Search OwnerID trong database trước
 
-  if card.Username != "" {
-    card.Status = consts.ActiveStatus
-  } else {
-    card.Status = consts.InactiveStatus
-  }
+  //if card.Username != "" {
+  //  card.Status = consts.ActiveStatus
+  //} else {
+  //  card.Status = consts.InactiveStatus
+  //}
 
   if cardRequest.Type == consts.StudentCard.ToText() {
     card.Balance = consts.StudentCard.ToDefaultBlance()
@@ -209,10 +209,10 @@ func UpdateCard(c *gin.Context) {
   // Bind update data
   var updateData UpdateCardReq
   updateDataCard := models.Card{
-    Username: updateData.OwnerID,
-    Balance:  updateData.Balance,
-    Status:   consts.Status(updateData.Status),
-    Type:     consts.CardType(updateData.Type),
+    //Username: updateData.OwnerID,
+    Balance: updateData.Balance,
+    Status:  consts.Status(updateData.Status),
+    Type:    consts.CardType(updateData.Type),
   }
 
   switch updateDataCard.Type {
@@ -308,11 +308,11 @@ func TopUpCard(c *gin.Context) {
   }
 
   // Tạo History log cho topup
-  if err := utils.CreateCardTopupHistory(card.RFID, card.Username, request.Amount, card.Balance); err != nil {
-    tx.Rollback()
-    utils.InternalServerError(c, "Lỗi tạo lịch sử nạp tiền")
-    return
-  }
+  //if err := utils.CreateCardTopupHistory(card.RFID, card.Username, request.Amount, card.Balance); err != nil {
+  //  tx.Rollback()
+  //  utils.InternalServerError(c, "Lỗi tạo lịch sử nạp tiền")
+  //  return
+  //}
 
   // Commit transaction
   tx.Commit()

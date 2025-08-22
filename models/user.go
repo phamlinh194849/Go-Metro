@@ -14,6 +14,8 @@ type User struct {
   FullName  string      `json:"full_name"`
   Role      consts.Role `gorm:"default:2" json:"role"`          // "ADMIN", "USER", "STAFF"
   Status    string      `gorm:"default:'active'" json:"status"` // "active" hoặc "inactive"
+  Avatar    string      `json:"avatar"`
+  Phone     string      `json:"phone"`
   CreatedAt time.Time   `json:"created_at"`
   UpdatedAt time.Time   `json:"updated_at"`
 }

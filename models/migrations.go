@@ -2,7 +2,7 @@ package models
 
 // MigrateAll chạy migration cho tất cả các models
 func MigrateAll() {
-  MigrateUser()
+  //MigrateUser()
   //MigrateCard()
   //MigrateHistory()
   //MigrateStation()

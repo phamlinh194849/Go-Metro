@@ -10,6 +10,7 @@ import (
   "go-metro/routes"
 
   "github.com/gin-gonic/gin"
+  "github.com/gin-contrib/cors"
   swaggerFiles "github.com/swaggo/files"
   ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -46,6 +47,16 @@ func main() {
 
   // Setup Gin router
   r := gin.Default()
+
+  // Setup CORS middleware - Allow all origins for demo
+  r.Use(cors.New(cors.Config{
+    AllowOrigins:     []string{"*"},
+    AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+    AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
+    ExposeHeaders:    []string{"Content-Length"},
+    AllowCredentials: true,
+    MaxAge:           12 * 60 * 60, // 12 hours
+  }))
 
   // Setup routes
   routes.SetupRoutes(r)

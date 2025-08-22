@@ -22,7 +22,7 @@ func CreateHistoryLog(cardID string, userID string, balance float64, userAction 
 }
 
 // CreateSellHistoryLog tạo lịch sử bán thẻ
-func CreateSellHistoryLog(cardID string, sellerID string, cardPriceSold float64) error {
+func CreateSellHistoryLog(cardID string, sellerID uint, cardPriceSold float64) error {
 	sellHistory := models.SellHistory{
 		CardID:        cardID,
 		SellerID:      sellerID,

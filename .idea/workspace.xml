@@ -7,10 +7,9 @@
     <list default="true" id="61bcd9f4-18e7-4a29-ab85-1314181e4035" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/card.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/card.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/card.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/card.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/migrations.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/migrations.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/sell_history.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/sell_history.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/history_helpers.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/history_helpers.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

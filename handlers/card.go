@@ -15,12 +15,12 @@ import (
 
 // CardRequest struct for creating card (without rf_id as it's auto-generated)
 type CardReq struct {
-  OwnerID string `json:"owner_id"`
-  Type    string `json:"type"  binding:"required"`
+  UserID uint   `json:"user_id" binding:"required"`
+  Type   string `json:"type"  binding:"required"`
 }
 
 type UpdateCardReq struct {
-  OwnerID string  `json:"owner_id"`
+  UserID  uint    `json:"user_id"`
   Balance float64 `json:"balance" gorm:"default:0"`
   Status  string  `json:"status"`
   Type    int
@@ -68,23 +68,23 @@ func CreateCard(c *gin.Context) {
 
   cardID := generateUniqueCardID()
   var user models.User
-  if err := config.DB.Where("username = ?", cardRequest.OwnerID).First(&user).Error; err != nil {
+  if err := config.DB.First(&user, cardRequest.UserID).Error; err != nil {
     utils.NotFound(c, "Người dùng không tồn tại")
     return
   }
 
   card := models.Card{
-    RFID: cardID,
-    //Username: cardRequest.OwnerID,
+    RFID:   cardID,
+    UserID: cardRequest.UserID,
   }
 
   // Search OwnerID trong database trước
 
-  //if card.Username != "" {
-  //  card.Status = consts.ActiveStatus
-  //} else {
-  //  card.Status = consts.InactiveStatus
-  //}
+  if card.UserID != 0 {
+   card.Status = consts.ActiveStatus
+  } else {
+   card.Status = consts.InactiveStatus
+  }
 
   if cardRequest.Type == consts.StudentCard.ToText() {
     card.Balance = consts.StudentCard.ToDefaultBlance()
@@ -111,7 +111,7 @@ func CreateCard(c *gin.Context) {
   }
 
   // Tạo SellHistory log
-  if err := utils.CreateSellHistoryLog(cardID, cardRequest.OwnerID, card.Price); err != nil {
+  if err := utils.CreateSellHistoryLog(cardID, cardRequest.UserID, card.Price); err != nil {
     tx.Rollback()
     utils.InternalServerError(c, "Lỗi tạo lịch sử bán thẻ")
     return
@@ -320,19 +320,19 @@ func TopUpCard(c *gin.Context) {
   utils.SuccessResponse(c, 200, "Nạp tiền thành công", card)
 }
 
-// GetCardsByUser handles GET /card/user/:owner_id
+// GetCardsByUser handles GET /card/user/:user_id
 // @Summary Get cards by user ID
 // @Description Retrieve all cards belonging to a specific user
 // @Tags card
 // @Accept json
 // @Produce json
-// @Param owner_id path string true "User ID"
-// @Router /card/user/{owner_id} [get]
+// @Param user_id path int true "User ID"
+// @Router /card/user/{user_id} [get]
 func GetCardsByUser(c *gin.Context) {
-  username := c.Param("owner_id")
+  userID := c.Param("user_id")
   var cards []models.Card
 
-  if err := config.DB.Where("username = ?", username).Find(&cards).Error; err != nil {
+  if err := config.DB.Where("user_id = ?", userID).Find(&cards).Error; err != nil {
     utils.InternalServerError(c, "failed to fetch user cards")
     return
   }

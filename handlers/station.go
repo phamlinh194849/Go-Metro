@@ -60,7 +60,7 @@ func CreateStation(c *gin.Context) {
 func GetStations(c *gin.Context) {
   var stations []models.Station
 
-  if err := config.DB.Find(&stations).Error; err != nil {
+  if err := config.DB.Order("id ASC").Find(&stations).Error; err != nil {
     utils.InternalServerError(c, "failed to fetch stations")
     return
   }

@@ -301,7 +301,7 @@ func ChangePassword(c *gin.Context) {
 func GetAllUsers(c *gin.Context) {
   var users []models.User
 
-  if err := config.DB.Find(&users).Error; err != nil {
+  if err := config.DB.Order("role ASC").Find(&users).Error; err != nil {
     utils.InternalServerError(c, "Lỗi khi lấy danh sách người dùng")
     return
   }

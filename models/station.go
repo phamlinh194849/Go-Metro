@@ -14,6 +14,7 @@ type Station struct {
   Address     string    `json:"address"`
   Status      string    `json:"status"`
   Description string    `json:"description"`
+  ImageURL    string    `json:"image_url"`
   CreatedAt   time.Time `json:"created_at"`
   UpdatedAt   time.Time `json:"updated_at"`
 }

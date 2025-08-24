@@ -352,7 +352,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/card/user/{owner_id}": {
+        "/card/user/{user_id}": {
             "get": {
                 "description": "Retrieve all cards belonging to a specific user",
                 "consumes": [
@@ -367,9 +367,9 @@ const docTemplate = `{
                 "summary": "Get cards by user ID",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "User ID",
-                        "name": "owner_id",
+                        "name": "user_id",
                         "in": "path",
                         "required": true
                     }
@@ -2381,7 +2381,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/handlers.ChangePasswordReq"
                         }
                     }
                 ],
@@ -2427,12 +2427,12 @@ const docTemplate = `{
                 "summary": "Update user profile",
                 "parameters": [
                     {
-                        "description": "Profile update data",
+                        "description": "Password change data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/models.User"
                         }
                     }
                 ],
@@ -2453,30 +2453,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - validation error or email already exists",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Thông tin không tồn tại",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
                         }
                     }
                 }
@@ -2519,8 +2495,8 @@ const docTemplate = `{
             ],
             "x-enum-varnames": [
                 "AdminRole",
-                "UserRole",
-                "StaffRole"
+                "StaffRole",
+                "UserRole"
             ]
         },
         "consts.Status": {
@@ -2550,13 +2526,30 @@ const docTemplate = `{
         "handlers.CardReq": {
             "type": "object",
             "required": [
-                "type"
+                "type",
+                "user_id"
             ],
             "properties": {
-                "owner_id": {
+                "type": {
                     "type": "string"
                 },
-                "type": {
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.ChangePasswordReq": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "old_password": {
                     "type": "string"
                 }
             }
@@ -2604,8 +2597,7 @@ const docTemplate = `{
             "required": [
                 "email",
                 "full_name",
-                "password",
-                "username"
+                "password"
             ],
             "properties": {
                 "email": {
@@ -2617,9 +2609,6 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 6
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -2643,13 +2632,13 @@ const docTemplate = `{
                 "balance": {
                     "type": "number"
                 },
-                "owner_id": {
-                    "type": "string"
-                },
                 "status": {
                     "type": "string"
                 },
                 "type": {
+                    "type": "integer"
+                },
+                "user_id": {
                     "type": "integer"
                 }
             }
@@ -2682,16 +2671,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "description": "quan hệ belongs-to",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    ]
+                    "$ref": "#/definitions/models.User"
                 },
-                "username": {
-                    "description": "1-1 nên unique",
-                    "type": "string"
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -2754,7 +2737,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.User"
                 },
                 "seller_id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "time": {
                     "type": "string"
@@ -2767,16 +2750,31 @@ const docTemplate = `{
         "models.Station": {
             "type": "object",
             "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "capacity": {
+                    "type": "integer"
+                },
                 "created_at": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "ip_address": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -2885,6 +2883,9 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2896,6 +2897,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "phone": {
+                    "type": "string"
                 },
                 "role": {
                     "description": "\"ADMIN\", \"USER\", \"STAFF\"",
@@ -2910,9 +2914,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }

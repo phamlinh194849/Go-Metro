@@ -192,20 +192,8 @@ func GetProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-//
-//	@Param request body object true "Profile update data" schema={
-//	  "type": "object",
-//	  "properties": {
-//	    "email": {"type": "string", "format": "email"},
-//	    "full_name": {"type": "string"}
-//	  }
-//	}
-//
+// @Param request body models.User true "Password change data"
 // @Success 200 {object} utils.Response{data=models.User} "Profile updated successfully"
-// @Failure 400 {object} utils.Response "Bad request - validation error or email already exists"
-// @Failure 401 {object} utils.Response "Unauthorized"
-// @Failure 404 {object} utils.Response "Thông tin không tồn tại"
-// @Failure 500 {object} utils.Response "Internal server error"
 // @Router /user/profile [put]
 func UpdateProfile(c *gin.Context) {
   userID, _ := c.Get("user_id")
@@ -253,7 +241,7 @@ func UpdateProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body object true "Password change data" schema={
+// @Param request body ChangePasswordReq true "Password change data"
 // @Router /user/password [put]
 func ChangePassword(c *gin.Context) {
   userID, _ := c.Get("user_id")

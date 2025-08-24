@@ -28,8 +28,8 @@ definitions:
     type: integer
     x-enum-varnames:
     - AdminRole
-    - UserRole
     - StaffRole
+    - UserRole
   consts.Status:
     enum:
     - active
@@ -50,12 +50,24 @@ definitions:
     - UserActionCheckout
   handlers.CardReq:
     properties:
-      owner_id:
-        type: string
       type:
         type: string
+      user_id:
+        type: integer
     required:
     - type
+    - user_id
+    type: object
+  handlers.ChangePasswordReq:
+    properties:
+      new_password:
+        minLength: 6
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
     type: object
   handlers.CheckInRequest:
     properties:
@@ -91,13 +103,10 @@ definitions:
       password:
         minLength: 6
         type: string
-      username:
-        type: string
     required:
     - email
     - full_name
     - password
-    - username
     type: object
   handlers.StationReq:
     properties:
@@ -112,11 +121,11 @@ definitions:
     properties:
       balance:
         type: number
-      owner_id:
-        type: string
       status:
         type: string
       type:
+        type: integer
+      user_id:
         type: integer
     type: object
   models.Card:
@@ -138,12 +147,9 @@ definitions:
       updated_at:
         type: string
       user:
-        allOf:
-        - $ref: '#/definitions/models.User'
-        description: quan hệ belongs-to
-      username:
-        description: 1-1 nên unique
-        type: string
+        $ref: '#/definitions/models.User'
+      user_id:
+        type: integer
     type: object
   models.History:
     properties:
@@ -183,7 +189,7 @@ definitions:
       seller:
         $ref: '#/definitions/models.User'
       seller_id:
-        type: string
+        type: integer
       time:
         type: string
       updated_at:
@@ -191,13 +197,23 @@ definitions:
     type: object
   models.Station:
     properties:
+      address:
+        type: string
+      capacity:
+        type: integer
       created_at:
+        type: string
+      description:
         type: string
       id:
         type: integer
+      image_url:
+        type: string
       ip_address:
         type: string
       name:
+        type: string
+      status:
         type: string
       updated_at:
         type: string
@@ -266,6 +282,8 @@ definitions:
     type: object
   models.User:
     properties:
+      avatar:
+        type: string
       created_at:
         type: string
       email:
@@ -274,6 +292,8 @@ definitions:
         type: string
       id:
         type: integer
+      phone:
+        type: string
       role:
         allOf:
         - $ref: '#/definitions/consts.Role'
@@ -282,8 +302,6 @@ definitions:
         description: '"active" hoặc "inactive"'
         type: string
       updated_at:
-        type: string
-      username:
         type: string
     type: object
   utils.Response:
@@ -616,7 +634,7 @@ paths:
       summary: Get cards by status
       tags:
       - card
-  /card/user/{owner_id}:
+  /card/user/{user_id}:
     get:
       consumes:
       - application/json
@@ -624,9 +642,9 @@ paths:
       parameters:
       - description: User ID
         in: path
-        name: owner_id
+        name: user_id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses: {}
@@ -1770,7 +1788,7 @@ paths:
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/handlers.ChangePasswordReq'
       produces:
       - application/json
       responses: {}
@@ -1797,12 +1815,12 @@ paths:
       - application/json
       description: Update current user's email and full name
       parameters:
-      - description: Profile update data
+      - description: Password change data
         in: body
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/models.User'
       produces:
       - application/json
       responses:
@@ -1815,22 +1833,6 @@ paths:
                 data:
                   $ref: '#/definitions/models.User'
               type: object
-        "400":
-          description: Bad request - validation error or email already exists
-          schema:
-            $ref: '#/definitions/utils.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.Response'
-        "404":
-          description: Thông tin không tồn tại
-          schema:
-            $ref: '#/definitions/utils.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/utils.Response'
       security:
       - BearerAuth: []
       summary: Update user profile

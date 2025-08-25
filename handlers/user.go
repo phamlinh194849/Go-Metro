@@ -1,8 +1,8 @@
 package handlers
 
 import (
-  "math/rand"
-  "time"
+  "strconv"
+  "strings"
 
   "go-metro/config"
   "go-metro/consts"
@@ -101,12 +101,6 @@ func Register(c *gin.Context) {
   utils.SuccessResponse(c, 201, "Đã tạo tài khoản thành công", gin.H{
     "user": user,
   })
-}
-
-func RandomUsername() int64 {
-  rand.Seed(time.Now().UnixNano())
-  // random số từ 10^9 đến 10^12 (12 chữ số chẳng hạn)
-  return rand.Int63n(1_000_000_000_000-1_000_000_000) + 1_000_000_000
 }
 
 // Ok
@@ -277,24 +271,216 @@ func ChangePassword(c *gin.Context) {
   utils.SuccessResponse(c, 200, "Đổi mật khẩu thành công", nil)
 }
 
-// Ok
-// Admin: Get all users
-// @Summary Get all users (Admin only)
-// @Description Retrieve all users in the system (Admin access required)
+// Admin: Get all users with pagination, filtering and search
+// @Summary Get all users with advanced features (Admin only)
+// @Description Retrieve users with pagination, role filtering, and name search (Admin access required)
 // @Tags admin
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "Page number (default: 1)" minimum(1)
+// @Param limit query int false "Items per page (default: 10, max: 100)" minimum(1) maximum(100)
+// @Param role query int false "Filter by role (1: Admin, 2: Staff, 3: User)" minimum(1) maximum(3)
+// @Param name query string false "Search by full name (partial match)"
+// @Param status query string false "Filter by status" Enums(active, inactive)
 // @Router /admin/users [get]
 func GetAllUsers(c *gin.Context) {
-  var users []models.User
+  var params models.UserQueryParams
 
-  if err := config.DB.Order("role ASC").Find(&users).Error; err != nil {
+  // Bind query parameters with validation
+  if err := c.ShouldBindQuery(&params); err != nil {
+    utils.BadRequest(c, "Tham số không hợp lệ: "+err.Error())
+    return
+  }
+
+  // Set default values
+  if params.Page == 0 {
+    params.Page = 1
+  }
+  if params.Limit == 0 {
+    params.Limit = 10
+  }
+
+  var users []models.User
+  var total int64
+
+  // Build query with filters
+  query := config.DB.Model(&models.User{})
+
+  // Apply role filter
+  if params.Role > 0 {
+    query = query.Where("role = ?", params.Role)
+  }
+
+  // Apply name search (case-insensitive partial match)
+  if params.Name != "" {
+    // Trim spaces and convert to lowercase for better search
+    searchTerm := "%" + strings.ToLower(strings.TrimSpace(params.Name)) + "%"
+    query = query.Where("LOWER(full_name) LIKE ?", searchTerm)
+  }
+
+  // Apply status filter
+  if params.Status != "" {
+    query = query.Where("status = ?", params.Status)
+  }
+
+  // Get total count for pagination
+  if err := query.Count(&total).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi đếm tổng số người dùng")
+    return
+  }
+
+  // Calculate offset and apply pagination
+  offset := (params.Page - 1) * params.Limit
+
+  // Execute query with pagination and ordering
+  if err := query.
+    Order("role ASC, created_at DESC").
+    Offset(offset).
+    Limit(params.Limit).
+    Find(&users).Error; err != nil {
     utils.InternalServerError(c, "Lỗi khi lấy danh sách người dùng")
     return
   }
 
-  utils.SuccessResponse(c, 200, "", users)
+  // Calculate total pages
+  totalPages := int((total + int64(params.Limit) - 1) / int64(params.Limit))
+
+  // Prepare paginated response
+  response := models.PaginationResponse{
+    Data:       users,
+    Total:      total,
+    Page:       params.Page,
+    Limit:      params.Limit,
+    TotalPages: totalPages,
+  }
+
+  utils.SuccessResponse(c, 200, "Lấy danh sách người dùng thành công", response)
+}
+
+// Helper function to get users with advanced filtering (can be reused)
+func GetUsersWithFilters(params models.UserQueryParams) ([]models.User, int64, error) {
+  var users []models.User
+  var total int64
+
+  // Set default values
+  if params.Page == 0 {
+    params.Page = 1
+  }
+  if params.Limit == 0 {
+    params.Limit = 10
+  }
+
+  // Build base query
+  query := config.DB.Model(&models.User{})
+
+  // Apply filters
+  if params.Role > 0 {
+    query = query.Where("role = ?", params.Role)
+  }
+
+  if params.Name != "" {
+    searchTerm := "%" + strings.ToLower(strings.TrimSpace(params.Name)) + "%"
+    query = query.Where("LOWER(full_name) LIKE ?", searchTerm)
+  }
+
+  if params.Status != "" {
+    query = query.Where("status = ?", params.Status)
+  }
+
+  // Get total count
+  if err := query.Count(&total).Error; err != nil {
+    return nil, 0, err
+  }
+
+  // Apply pagination
+  offset := (params.Page - 1) * params.Limit
+  if err := query.
+    Order("role ASC, created_at DESC").
+    Offset(offset).
+    Limit(params.Limit).
+    Find(&users).Error; err != nil {
+    return nil, 0, err
+  }
+
+  return users, total, nil
+}
+
+// Alternative: Simplified version without struct binding
+// Admin: Get all users (Alternative implementation)
+// @Summary Get all users with query parameters (Admin only)
+// @Description Alternative implementation with manual parameter parsing
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Router /admin/users/simple [get]
+func GetAllUsersSimple(c *gin.Context) {
+  // Parse query parameters manually
+  page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+  limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+  roleStr := c.Query("role")
+  name := strings.TrimSpace(c.Query("name"))
+  status := c.Query("status")
+
+  // Validate parameters
+  if page < 1 {
+    page = 1
+  }
+  if limit < 1 || limit > 100 {
+    limit = 10
+  }
+
+  var users []models.User
+  var total int64
+
+  query := config.DB.Model(&models.User{})
+
+  // Apply role filter
+  if roleStr != "" {
+    if role, err := strconv.Atoi(roleStr); err == nil && role >= 1 && role <= 3 {
+      query = query.Where("role = ?", role)
+    }
+  }
+
+  // Apply name search
+  if name != "" {
+    searchTerm := "%" + strings.ToLower(name) + "%"
+    query = query.Where("LOWER(full_name) LIKE ?", searchTerm)
+  }
+
+  // Apply status filter
+  if status == "active" || status == "inactive" {
+    query = query.Where("status = ?", status)
+  }
+
+  // Get total and paginated results
+  if err := query.Count(&total).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi đếm tổng số người dùng")
+    return
+  }
+
+  offset := (page - 1) * limit
+  if err := query.
+    Order("role ASC, created_at DESC").
+    Offset(offset).
+    Limit(limit).
+    Find(&users).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi lấy danh sách người dùng")
+    return
+  }
+
+  totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+  response := map[string]interface{}{
+    "data":        users,
+    "total":       total,
+    "page":        page,
+    "limit":       limit,
+    "total_pages": totalPages,
+  }
+
+  utils.SuccessResponse(c, 200, "Lấy danh sách người dùng thành công", response)
 }
 
 // Ok

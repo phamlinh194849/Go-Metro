@@ -297,7 +297,7 @@ definitions:
       role:
         allOf:
         - $ref: '#/definitions/consts.Role'
-        description: '"ADMIN", "USER", "STAFF"'
+        description: '"ADMIN", "STAFF", "USER"'
       status:
         description: '"active" hoặc "inactive"'
         type: string
@@ -332,13 +332,43 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve all users in the system (Admin access required)
+      description: Retrieve users with pagination, role filtering, and name search
+        (Admin access required)
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10, max: 100)'
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: 'Filter by role (1: Admin, 2: Staff, 3: User)'
+        in: query
+        maximum: 3
+        minimum: 1
+        name: role
+        type: integer
+      - description: Search by full name (partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by status
+        enum:
+        - active
+        - inactive
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses: {}
       security:
       - BearerAuth: []
-      summary: Get all users (Admin only)
+      summary: Get all users with advanced features (Admin only)
       tags:
       - admin
   /admin/users/{id}:
@@ -420,6 +450,19 @@ paths:
       security:
       - BearerAuth: []
       summary: Update user (Admin only)
+      tags:
+      - admin
+  /admin/users/simple:
+    get:
+      consumes:
+      - application/json
+      description: Alternative implementation with manual parameter parsing
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all users with query parameters (Admin only)
       tags:
       - admin
   /auth/login:

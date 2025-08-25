@@ -31,7 +31,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve all users in the system (Admin access required)",
+                "description": "Retrieve users with pagination, role filtering, and name search (Admin access required)",
                 "consumes": [
                     "application/json"
                 ],
@@ -41,7 +41,69 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get all users (Admin only)",
+                "summary": "Get all users with advanced features (Admin only)",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 3,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Filter by role (1: Admin, 2: Staff, 3: User)",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by full name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "active",
+                            "inactive"
+                        ],
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/users/simple": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Alternative implementation with manual parameter parsing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get all users with query parameters (Admin only)",
                 "responses": {}
             }
         },
@@ -2902,7 +2964,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
-                    "description": "\"ADMIN\", \"USER\", \"STAFF\"",
+                    "description": "\"ADMIN\", \"STAFF\", \"USER\"",
                     "allOf": [
                         {
                             "$ref": "#/definitions/consts.Role"

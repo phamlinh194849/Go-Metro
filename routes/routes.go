@@ -94,7 +94,9 @@ func SetupRoutes(r *gin.Engine) {
   adminGroup := r.Group("/admin")
   adminGroup.Use(utils.AuthMiddleware(), utils.AdminMiddleware())
   {
-    adminGroup.GET("/users", handlers.GetAllUsers)       // Lấy tất cả users
+    adminGroup.GET("/users", handlers.GetAllUsers)              // Lấy tất cả users
+    adminGroup.GET("/users/simple", handlers.GetAllUsersSimple) // Lấy tất cả users
+    adminGroup.GET("/users/statistics", handlers.GetUserStatisticsOptimized)
     adminGroup.GET("/users/:id", handlers.GetUserByID)   // Lấy user theo ID
     adminGroup.PUT("/users/:id", handlers.UpdateUser)    // Cập nhật user
     adminGroup.DELETE("/users/:id", handlers.DeleteUser) // Xóa user
@@ -103,12 +105,12 @@ func SetupRoutes(r *gin.Engine) {
   // Station routes
   stationGroup := r.Group("/station")
   {
-    stationGroup.POST("", handlers.CreateStation)       // Tạo station mới
-    stationGroup.GET("", handlers.GetStations)          // Lấy danh sách tất cả station
-    stationGroup.GET("/:id", handlers.GetStationByID)   // Lấy station theo ID
-    stationGroup.PUT("/:id", handlers.UpdateStation)    // Cập nhật station
-    stationGroup.DELETE("/:id", handlers.DeleteStation) // Xóa station
-    stationGroup.POST("/:id/checkin", handlers.CheckIn) // Check-in tại trạm
+    stationGroup.POST("", handlers.CreateStation)         // Tạo station mới
+    stationGroup.GET("", handlers.GetStations)            // Lấy danh sách tất cả station
+    stationGroup.GET("/:id", handlers.GetStationByID)     // Lấy station theo ID
+    stationGroup.PUT("/:id", handlers.UpdateStation)      // Cập nhật station
+    stationGroup.DELETE("/:id", handlers.DeleteStation)   // Xóa station
+    stationGroup.POST("/:id/checkin", handlers.CheckIn)   // Check-in tại trạm
     stationGroup.POST("/:id/checkout", handlers.CheckOut) // Check-out tại trạm
   }
 

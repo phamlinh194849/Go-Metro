@@ -49,6 +49,13 @@ type AdminUpdateInfoReq struct {
   Status   string `json:"status"`
 }
 
+type UserStats struct {
+  TotalAdmin  int64 `json:"total_admin" example:"5" description:"Total number of admin users (role = 1)"`
+  TotalStaff  int64 `json:"total_staff" example:"12" description:"Total number of staff users (role = 2)"`
+  TotalUser   int64 `json:"total_user" example:"150" description:"Total number of regular users (role = 3)"`
+  TotalActive int64 `json:"total_active" example:"140" description:"Total number of active users"`
+}
+
 // Ok
 // Register handles POST /auth/register
 // @Summary Register a new user
@@ -356,6 +363,69 @@ func GetAllUsers(c *gin.Context) {
   }
 
   utils.SuccessResponse(c, 200, "Lấy danh sách người dùng thành công", response)
+}
+
+// GetUserStatisticsOptimized gets user statistics by role and status
+// @Summary Get user statistics
+// @Description Get statistics of users grouped by role (Admin, Staff, User) and active status count
+// @Tags statistics
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Router /api/users/statistics [get]
+func GetUserStatisticsOptimized(c *gin.Context) {
+  type RoleCount struct {
+    Role  consts.Role `json:"role"`
+    Count int64       `json:"count"`
+  }
+
+  type StatusCount struct {
+    Status string `json:"status"`
+    Count  int64  `json:"count"`
+  }
+
+  var roleStats []RoleCount
+  var statusStats []StatusCount
+  var stats UserStats
+
+  // Count by roles in one query
+  if err := config.DB.Model(&models.User{}).
+    Select("role, COUNT(*) as count").
+    Group("role").
+    Find(&roleStats).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi thống kê theo role")
+    return
+  }
+
+  // Count by status in one query
+  if err := config.DB.Model(&models.User{}).
+    Select("status, COUNT(*) as count").
+    Group("status").
+    Find(&statusStats).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi thống kê theo status")
+    return
+  }
+
+  // Map role counts to stats
+  for _, roleStat := range roleStats {
+    switch roleStat.Role {
+    case consts.AdminRole:
+      stats.TotalAdmin = roleStat.Count
+    case consts.StaffRole:
+      stats.TotalStaff = roleStat.Count
+    case consts.UserRole:
+      stats.TotalUser = roleStat.Count
+    }
+  }
+
+  // Map status counts to stats
+  for _, statusStat := range statusStats {
+    if statusStat.Status == "active" {
+      stats.TotalActive = statusStat.Count
+    }
+  }
+
+  utils.SuccessResponse(c, 200, "Lấy thống kê người dùng thành công", stats)
 }
 
 // Helper function to get users with advanced filtering (can be reused)

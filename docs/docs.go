@@ -107,6 +107,27 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/admin/users/statistics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get statistics of users grouped by role (Admin, Staff, User) and active status count",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "summary": "Get user statistics",
+                "responses": {}
+            }
+        },
         "/admin/users/{id}": {
             "get": {
                 "security": [
@@ -231,27 +252,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/users/statistics": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get statistics of users grouped by role (Admin, Staff, User) and active status count",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "statistics"
-                ],
-                "summary": "Get user statistics",
-                "responses": {}
             }
         },
         "/auth/login": {

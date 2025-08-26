@@ -465,7 +465,7 @@ paths:
       summary: Get all users with query parameters (Admin only)
       tags:
       - admin
-  /api/users/statistics:
+  /admin/users/statistics:
     get:
       consumes:
       - application/json

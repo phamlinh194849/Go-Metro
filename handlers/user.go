@@ -372,7 +372,7 @@ func GetAllUsers(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Router /api/users/statistics [get]
+// @Router /admin/users/statistics [get]
 func GetUserStatisticsOptimized(c *gin.Context) {
   type RoleCount struct {
     Role  consts.Role `json:"role"`

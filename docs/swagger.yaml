@@ -905,26 +905,25 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve all metro stations
+      description: Retrieve all metro stations with optional status filter and name
+        search
+      parameters:
+      - description: Filter by status
+        enum:
+        - active
+        - inactive
+        - maintenance
+        in: query
+        name: status
+        type: string
+      - description: Search by station name (partial match, case-insensitive)
+        in: query
+        name: name
+        type: string
       produces:
       - application/json
-      responses:
-        "200":
-          description: Stations retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/utils.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.Station'
-                  type: array
-              type: object
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/utils.Response'
-      summary: Get all stations
+      responses: {}
+      summary: Get all stations with filters
       tags:
       - station
     post:

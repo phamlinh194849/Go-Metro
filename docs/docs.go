@@ -923,7 +923,7 @@ const docTemplate = `{
         },
         "/station": {
             "get": {
-                "description": "Retrieve all metro stations",
+                "description": "Retrieve all metro stations with optional status filter and name search",
                 "consumes": [
                     "application/json"
                 ],
@@ -933,36 +933,27 @@ const docTemplate = `{
                 "tags": [
                     "station"
                 ],
-                "summary": "Get all stations",
-                "responses": {
-                    "200": {
-                        "description": "Stations retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/utils.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/models.Station"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
+                "summary": "Get all stations with filters",
+                "parameters": [
+                    {
+                        "enum": [
+                            "active",
+                            "inactive",
+                            "maintenance"
+                        ],
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
                     },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
-                        }
+                    {
+                        "type": "string",
+                        "description": "Search by station name (partial match, case-insensitive)",
+                        "name": "name",
+                        "in": "query"
                     }
-                }
+                ],
+                "responses": {}
             },
             "post": {
                 "description": "Create a new metro station",

@@ -2,6 +2,7 @@ package handlers
 
 import (
   "net/http"
+  "strings"
 
   "go-metro/config"
   "go-metro/models"
@@ -48,24 +49,54 @@ func CreateStation(c *gin.Context) {
   utils.SuccessResponse(c, http.StatusCreated, "station created successfully", station)
 }
 
-// GetStations handles GET /station
-// @Summary Get all stations
-// @Description Retrieve all metro stations
+// StationQueryParams defines query parameters for station filtering
+type StationQueryParams struct {
+  Status string `form:"status" binding:"omitempty,oneof=active inactive maintenance" json:"status"`
+  Name   string `form:"name" binding:"omitempty,max=100" json:"name"`
+}
+
+// GetStations handles GET /station with filtering and search
+// @Summary Get all stations with filters
+// @Description Retrieve all metro stations with optional status filter and name search
 // @Tags station
 // @Accept json
 // @Produce json
-// @Success 200 {object} utils.Response{data=[]models.Station} "Stations retrieved successfully"
-// @Failure 500 {object} utils.Response "Internal server error"
+// @Param status query string false "Filter by status" Enums(active, inactive, maintenance)
+// @Param name query string false "Search by station name (partial match, case-insensitive)"
 // @Router /station [get]
 func GetStations(c *gin.Context) {
-  var stations []models.Station
+  var params StationQueryParams
 
-  if err := config.DB.Order("id ASC").Find(&stations).Error; err != nil {
-    utils.InternalServerError(c, "failed to fetch stations")
+  // Bind query parameters with validation
+  if err := c.ShouldBindQuery(&params); err != nil {
+    utils.BadRequest(c, "Tham số không hợp lệ: "+err.Error())
     return
   }
 
-  utils.SuccessResponse(c, http.StatusOK, "stations retrieved successfully", stations)
+  var stations []models.Station
+
+  // Build query with filters
+  query := config.DB.Model(&models.Station{})
+
+  // Apply status filter
+  if params.Status != "" {
+    query = query.Where("status = ?", params.Status)
+  }
+
+  // Apply name search (case-insensitive partial match)
+  if params.Name != "" {
+    // Trim spaces and convert to lowercase for better search
+    searchTerm := "%" + strings.ToLower(strings.TrimSpace(params.Name)) + "%"
+    query = query.Where("LOWER(name) LIKE ?", searchTerm)
+  }
+
+  // Execute query with ordering
+  if err := query.Order("id ASC").Find(&stations).Error; err != nil {
+    utils.InternalServerError(c, "Lỗi khi lấy danh sách trạm")
+    return
+  }
+
+  utils.SuccessResponse(c, http.StatusOK, "Lấy danh sách trạm thành công", stations)
 }
 
 // GetStationByID handles GET /station/:id

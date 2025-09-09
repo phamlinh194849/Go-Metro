@@ -1,0 +1,35 @@
+-- 10 lệnh SQL INSERT để tạo người dùng mới
+-- Role: 1 = Admin, 2 = Staff, 3 = User
+
+-- Admin users
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword1', 'phan.trung.hieu@company.com', 'Phan Trung Hiếu', 1, 'active', 'https://avatar.com/admin.jpg', '0901234567', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword2', 'tran.thi.minh.anh@company.com', 'Trần Thị Minh Anh', 1, 'active', 'https://avatar.com/superadmin.jpg', '0901234568', NOW(), NOW());
+
+-- Staff users
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword3', 'le.van.duc@company.com', 'Lê Văn Đức', 2, 'active', 'https://avatar.com/staff1.jpg', '0901234569', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword4', 'pham.thi.lan.huong@company.com', 'Phạm Thị Lan Hương', 2, 'active', 'https://avatar.com/staff2.jpg', '0901234570', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword5', 'hoang.minh.tuan@company.com', 'Hoàng Minh Tuấn', 2, 'active', 'https://avatar.com/manager.jpg', '0901234571', NOW(), NOW());
+
+-- Regular users
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword6', 'nguyen.thi.thu.ha@gmail.com', 'Nguyễn Thị Thu Hà', 3, 'active', 'https://avatar.com/user1.jpg', '0901234572', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword7', 'tran.van.nam@yahoo.com', 'Trần Văn Nam', 3, 'active', 'https://avatar.com/customer.jpg', '0901234573', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword8', 'le.thi.phuong@outlook.com', 'Lê Thị Phương', 3, 'inactive', 'https://avatar.com/member.jpg', '0901234574', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword9', 'vu.quang.huy@gmail.com', 'Vũ Quang Huy', 3, 'active', NULL, '0901234575', NOW(), NOW());
+
+INSERT INTO users (password, email, full_name, role, status, avatar, phone, created_at, updated_at)
+VALUES ('$2a$10$hashedpassword10', 'do.thi.mai@gmail.com', 'Đỗ Thị Mai', 3, 'active', 'https://avatar.com/demo.jpg', NULL, NOW(), NOW());

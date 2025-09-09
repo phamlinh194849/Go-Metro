@@ -1,0 +1,15 @@
+INSERT INTO stations (name, ip_address, capacity, address, status, description, image_url, created_at, updated_at) VALUES
+('Ga Bến Thành', '192.168.1.1', 50000, 'Công viên 23 tháng 9, Quận 1', 'active', 'Ga ngầm trung tâm, kết nối nhiều tuyến', 'https://example.com/images/ben_thanh.jpg', NOW(), NOW()),
+('Ga Nhà hát Thành phố', '192.168.1.2', 45000, 'Đường Lê Lợi, Quận 1', 'active', 'Ga ngầm gần Nhà hát Lớn', 'https://example.com/images/nha_hat.jpg', NOW(), NOW()),
+('Ga Ba Son', '192.168.1.3', 40000, 'Đường Tôn Đức Thắng, Quận 1', 'active', 'Ga ngầm tại khu vực Ba Son', 'https://example.com/images/ba_son.jpg', NOW(), NOW()),
+('Ga Khánh Hội', '192.168.1.4', 35000, 'Gần cảng Khánh Hội, Quận 4', 'Đang xây dựng', 'Ga trên cao, gần cảng', 'https://example.com/images/khanh_hoi.jpg', NOW(), NOW()),
+('Ga Tân Cảng', '192.168.1.5', 30000, 'Đường Điện Biên Phủ, Quận Bình Thạnh', 'active', 'Ga trên cao, gần cầu Sài Gòn', 'https://example.com/images/tan_cang.jpg', NOW(), NOW()),
+('Ga Thảo Điền', '192.168.1.6', 28000, 'Đường Võ Nguyên Giáp, TP. Thủ Đức', 'active', 'Ga trên cao tại Thảo Điền', 'https://example.com/images/thao_dien.jpg', NOW(), NOW()),
+('Ga An Phú', '192.168.1.7', 25000, 'Đường Song Hành, TP. Thủ Đức', 'active', 'Ga trên cao tại khu vực An Phú', 'https://example.com/images/an_phu.jpg', NOW(), NOW()),
+('Ga Rạch Chiếc', '192.168.1.8', 22000, 'Đường Võ Nguyên Giáp, TP. Thủ Đức', 'active', 'Ga trên cao, gần cầu Rạch Chiếc', 'https://example.com/images/rach_chiec.jpg', NOW(), NOW()),
+('Ga Phước Long', '192.168.1.9', 20000, 'Đường Xa lộ Hà Nội, TP. Thủ Đức', 'active', 'Ga trên cao tại Phước Long', 'https://example.com/images/phuoc_long.jpg', NOW(), NOW()),
+('Ga Bình Thái', '192.168.1.10', 18000, 'Đường Xa lộ Hà Nội, TP. Thủ Đức', 'active', 'Ga trên cao, gần ngã tư Bình Thái', 'https://example.com/images/binh_thai.jpg', NOW(), NOW()),
+('Ga Thủ Đức', '192.168.1.11', 15000, 'Đường Xa lộ Hà Nội, TP. Thủ Đức', 'active', 'Ga trên cao, thuộc quận Thủ Đức cũ', 'https://example.com/images/thu_duc.jpg', NOW(), NOW()),
+('Ga Khu công nghệ cao', '192.168.1.12', 12000, 'Khu công nghệ cao, TP. Thủ Đức', 'active', 'Ga trên cao, phục vụ Khu công nghệ cao', 'https://example.com/images/khu_cong_nghe_cao.jpg', NOW(), NOW()),
+('Ga Đại học Quốc gia TP.HCM', '192.168.1.13', 10000, 'Khu đô thị ĐHQG, TP. Thủ Đức', 'active', 'Ga trên cao, phục vụ sinh viên ĐHQG', 'https://example.com/images/dh_quoc_gia.jpg', NOW(), NOW()),
+('Ga Suối Tiên', '192.168.1.14', 8000, 'Xa lộ Hà Nội, TP. Thủ Đức', 'active', 'Ga trên cao, ga cuối của tuyến', 'https://example.com/images/suoi_tien.jpg', NOW(), NOW());
